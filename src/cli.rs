@@ -1,17 +1,27 @@
-use clap::Parser;
+use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
-pub struct Args {
-    /// Name of entity
-    #[arg(short, long)]
-    pub entity: String,
+pub struct CliArgs {
+    #[command(subcommand)]
+    pub action: Action,
+}
 
-    /// Name of category
-    #[arg(short, long)]
-    pub category: String,
-
-    /// Value
-    #[arg(short, long, default_value_t = 0.0)]
-    pub value: f64,
+#[derive(Subcommand, Debug)]
+pub enum Action {
+    /// List all accounts
+    List,
+    /// Add a new account
+    Add {
+        /// Money value
+        value: f64,
+        /// Name of entity
+        entity: String,
+        /// Name of category
+        category: String,
+    },
+    /// Update an account
+    Update,
+    /// Remove an account
+    Remove,
 }

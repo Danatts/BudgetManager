@@ -1,31 +1,28 @@
-use budget_manager::{account::Account, cli::Args, db};
+use budget_manager::{
+    account::{self, Account},
+    cli::{Action::*, CliArgs},
+};
 use clap::Parser;
-use rusqlite::Result;
+use rusqlite::{Connection, Result};
 
 fn main() -> Result<()> {
-    let args = Args::parse();
-    let data = Account::build(&args);
+    let CliArgs { action } = CliArgs::parse();
+    let connection = Connection::open_in_memory()?;
 
-    let connection = db::connect()?;
+    account::create_accounts_table(&connection).expect("could not create table");
 
-    db::create_accounts_table(&connection).expect("could not create table");
-
-    db::insert_account(&connection, &data).expect("could no insert account");
-
-    let mut stmt = connection.prepare("SELECT * FROM accounts")?;
-
-    let account_iter = stmt.query_map([], |row| {
-        Ok(Account {
-            account_id: row.get(0)?,
-            value: row.get(1)?,
-            entity: row.get(2)?,
-            category: row.get(3)?,
-        })
-    })?;
-
-    for account in account_iter {
-        println!("{:?}", account.unwrap());
+    match action {
+        List => account::list_accounts(&connection).expect("could not list accounts"),
+        Add {
+            value,
+            entity,
+            category,
+        } => account::add_account(&connection, Account::new(value, entity, category))
+            .expect("could not add new account"),
+        Update => unimplemented!(),
+        Remove => unimplemented!(),
     }
+    account::list_accounts(&connection).expect("could not list accounts");
 
     Ok(())
 }
