@@ -14,10 +14,10 @@ fn main() -> Result<()> {
     match action {
         List => account::list_accounts(&connection).expect("could not list accounts"),
         Add {
-            value,
+            amount,
             entity,
             category,
-        } => account::add_account(&connection, Account::new(value, entity, category))
+        } => account::add_account(&connection, Account::new(amount, entity, category))
             .expect("could not add new account"),
         Update => unimplemented!(),
         Remove => unimplemented!(),

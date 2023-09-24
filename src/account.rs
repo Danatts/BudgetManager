@@ -3,16 +3,16 @@ use rusqlite::{Connection, Error, Result};
 #[derive(Debug)]
 pub struct Account {
     pub account_id: u32,
-    pub value: f64,
+    pub amount: f64,
     pub entity: String,
     pub category: String,
 }
 
 impl Account {
-    pub fn new(value: f64, entity: String, category: String) -> Account {
+    pub fn new(amount: f64, entity: String, category: String) -> Account {
         Account {
             account_id: 1,
-            value,
+            amount,
             entity,
             category,
         }
@@ -23,7 +23,7 @@ pub fn create_accounts_table(connection: &Connection) -> Result<usize, Error> {
     let query = "
         CREATE TABLE accounts (
             account_id INTEGER PRIMARY KEY,
-            value REAL,
+            amount REAL,
             entity TEXT,
             category TEXT
         )";
@@ -36,7 +36,7 @@ pub fn add_account(connection: &Connection, account: Account) -> Result<(), Erro
         query,
         (
             &account.account_id,
-            &account.value,
+            &account.amount,
             &account.entity,
             &account.category,
         ),
@@ -51,7 +51,7 @@ pub fn list_accounts(connection: &Connection) -> Result<(), Error> {
     let account_iter = stmt.query_map([], |row| {
         Ok(Account {
             account_id: row.get(0)?,
-            value: row.get(1)?,
+            amount: row.get(1)?,
             entity: row.get(2)?,
             category: row.get(3)?,
         })

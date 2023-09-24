@@ -13,11 +13,14 @@ pub enum Action {
     List,
     /// Add a new account
     Add {
-        /// Money value
-        value: f64,
+        /// Money amount
+        #[arg(short, long)]
+        amount: f64,
         /// Name of entity
+        #[arg(short, long)]
         entity: String,
         /// Name of category
+        #[arg(short, long)]
         category: String,
     },
     /// Update an account
