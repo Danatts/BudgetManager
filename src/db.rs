@@ -1,4 +1,4 @@
-use crate::record::Account;
+use crate::account::Account;
 use rusqlite::{Connection, Error};
 
 pub fn connect() -> Result<Connection, Error> {
@@ -11,7 +11,6 @@ pub fn create_accounts_table(connection: &Connection) -> Result<usize, Error> {
         CREATE TABLE accounts (
             account_id INTEGER PRIMARY KEY,
             value REAL,
-            description TEXT,
             entity TEXT,
             category TEXT
         )";
@@ -19,13 +18,12 @@ pub fn create_accounts_table(connection: &Connection) -> Result<usize, Error> {
 }
 
 pub fn insert_account(connection: &Connection, account: &Account) -> Result<usize, Error> {
-    let query = "INSERT INTO accounts VALUES(?1, ?2, ?3, ?4, ?5)";
+    let query = "INSERT INTO accounts VALUES(?1, ?2, ?3, ?4)";
     connection.execute(
         query,
         (
             &account.account_id,
             &account.value,
-            &account.description,
             &account.entity,
             &account.category,
         ),

@@ -1,10 +1,10 @@
-use std::env;
-
-use budget_manager::{db, record::Account};
+use budget_manager::{account::Account, cli::Args, db};
+use clap::Parser;
 use rusqlite::Result;
 
 fn main() -> Result<()> {
-    let data = Account::build();
+    let args = Args::parse();
+    let data = Account::build(&args);
 
     let connection = db::connect()?;
 
@@ -18,17 +18,14 @@ fn main() -> Result<()> {
         Ok(Account {
             account_id: row.get(0)?,
             value: row.get(1)?,
-            description: row.get(2)?,
-            entity: row.get(3)?,
-            category: row.get(4)?,
+            entity: row.get(2)?,
+            category: row.get(3)?,
         })
     })?;
 
     for account in account_iter {
-        println!("Found record {:?}", account.unwrap());
+        println!("{:?}", account.unwrap());
     }
-
-    println!("{:?}", env::args());
 
     Ok(())
 }
