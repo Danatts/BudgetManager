@@ -7,9 +7,16 @@ use rusqlite::{Connection, Result};
 
 fn main() -> Result<()> {
     let CliArgs { action } = CliArgs::parse();
-    let connection = Connection::open_in_memory()?;
 
-    account::create_accounts_table(&connection).expect("could not create table");
+    let connection = match Connection::open_in_memory() {
+        Ok(connection) => connection,
+        Err(_) => unimplemented!(),
+    };
+
+    match account::create_accounts_table(&connection) {
+        Ok(_) => println!("Accounts table created successfully."),
+        Err(err) => eprintln!("{err}"),
+    };
 
     match action {
         List => account::list_accounts(&connection).expect("could not list accounts"),
@@ -21,7 +28,8 @@ fn main() -> Result<()> {
             .expect("could not add new account"),
         Update => unimplemented!(),
         Remove => unimplemented!(),
-    }
+    };
+
     account::list_accounts(&connection).expect("could not list accounts");
 
     Ok(())

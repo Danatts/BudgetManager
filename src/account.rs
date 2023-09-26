@@ -1,8 +1,8 @@
-use rusqlite::{Connection, Error, Result};
+use rusqlite::{Connection, Result};
 
 #[derive(Debug)]
 pub struct Account {
-    pub account_id: u32,
+    pub account_id: Option<i32>,
     pub amount: f64,
     pub entity: String,
     pub category: String,
@@ -11,7 +11,7 @@ pub struct Account {
 impl Account {
     pub fn new(amount: f64, entity: String, category: String) -> Account {
         Account {
-            account_id: 1,
+            account_id: None,
             amount,
             entity,
             category,
@@ -19,7 +19,7 @@ impl Account {
     }
 }
 
-pub fn create_accounts_table(connection: &Connection) -> Result<usize, Error> {
+pub fn create_accounts_table(connection: &Connection) -> Result<()> {
     let query = "
         CREATE TABLE accounts (
             account_id INTEGER PRIMARY KEY,
@@ -27,10 +27,11 @@ pub fn create_accounts_table(connection: &Connection) -> Result<usize, Error> {
             entity TEXT,
             category TEXT
         )";
-    connection.execute(query, ())
+    let _ = connection.execute(query, ());
+    Ok(())
 }
 
-pub fn add_account(connection: &Connection, account: Account) -> Result<(), Error> {
+pub fn add_account(connection: &Connection, account: Account) -> Result<()> {
     let query = "INSERT INTO accounts VALUES(?1, ?2, ?3, ?4)";
     let _ = connection.execute(
         query,
@@ -45,7 +46,7 @@ pub fn add_account(connection: &Connection, account: Account) -> Result<(), Erro
     Ok(())
 }
 
-pub fn list_accounts(connection: &Connection) -> Result<(), Error> {
+pub fn list_accounts(connection: &Connection) -> Result<()> {
     let mut stmt = connection.prepare("SELECT * FROM accounts")?;
 
     let account_iter = stmt.query_map([], |row| {
