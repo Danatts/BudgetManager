@@ -1,23 +1,17 @@
 use crate::account::Account;
 use crate::cli::{Action::*, CliArgs};
 use clap::Parser;
-use rusqlite::{Connection, Result};
+use rusqlite::Connection;
 
 pub mod account;
 pub mod cli;
 
-fn main() -> Result<()> {
+fn main() {
     let CliArgs { action } = CliArgs::parse();
 
-    let connection = match Connection::open_in_memory() {
-        Ok(connection) => connection,
-        Err(_) => unimplemented!(),
-    };
+    let connection = Connection::open_in_memory().expect("could not connect to database");
 
-    match account::create_accounts_table(&connection) {
-        Ok(_) => println!("Accounts table created successfully."),
-        Err(err) => eprintln!("{err}"),
-    };
+    account::create_accounts_table(&connection).expect("could not create account's table");
 
     match action {
         List => account::list_accounts(&connection).expect("could not list accounts"),
@@ -32,6 +26,4 @@ fn main() -> Result<()> {
     };
 
     account::list_accounts(&connection).expect("could not list accounts");
-
-    Ok(())
 }

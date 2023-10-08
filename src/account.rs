@@ -19,7 +19,7 @@ impl Account {
     }
 }
 
-pub fn create_accounts_table(connection: &Connection) -> Result<()> {
+pub fn create_accounts_table(connection: &Connection) -> Result<usize> {
     let query = "
         CREATE TABLE accounts (
             account_id INTEGER PRIMARY KEY,
@@ -27,13 +27,12 @@ pub fn create_accounts_table(connection: &Connection) -> Result<()> {
             entity TEXT,
             category TEXT
         )";
-    let _ = connection.execute(query, ());
-    Ok(())
+    connection.execute(query, ())
 }
 
-pub fn add_account(connection: &Connection, account: Account) -> Result<()> {
+pub fn add_account(connection: &Connection, account: Account) -> Result<usize> {
     let query = "INSERT INTO accounts VALUES(?1, ?2, ?3, ?4)";
-    let _ = connection.execute(
+    connection.execute(
         query,
         (
             &account.account_id,
@@ -41,12 +40,10 @@ pub fn add_account(connection: &Connection, account: Account) -> Result<()> {
             &account.entity,
             &account.category,
         ),
-    );
-    println!("account added");
-    Ok(())
+    )
 }
 
-pub fn list_accounts(connection: &Connection) -> Result<()> {
+pub fn list_accounts(connection: &Connection) -> Result<usize> {
     let mut stmt = connection.prepare("SELECT * FROM accounts")?;
 
     let account_iter = stmt.query_map([], |row| {
@@ -62,7 +59,7 @@ pub fn list_accounts(connection: &Connection) -> Result<()> {
         println!("{:?}", account.unwrap());
     }
 
-    Ok(())
+    Ok(0)
 }
 
 pub fn update_account() {
