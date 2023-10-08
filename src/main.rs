@@ -1,9 +1,10 @@
-use budget_manager::{
-    account::{self, Account},
-    cli::{Action::*, CliArgs},
-};
+use crate::account::Account;
+use crate::cli::{Action::*, CliArgs};
 use clap::Parser;
 use rusqlite::{Connection, Result};
+
+pub mod account;
+pub mod cli;
 
 fn main() -> Result<()> {
     let CliArgs { action } = CliArgs::parse();
