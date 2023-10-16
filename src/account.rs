@@ -1,3 +1,5 @@
+use std::process::Termination;
+
 use rusqlite::{Connection, Result};
 
 #[derive(Debug)]
@@ -16,6 +18,12 @@ impl Account {
             entity,
             category,
         }
+    }
+}
+
+impl Termination for Account {
+    fn report(self) -> std::process::ExitCode {
+        unimplemented!()
     }
 }
 
@@ -69,3 +77,6 @@ pub fn update_account() {
 pub fn remove_account() {
     unimplemented!()
 }
+
+#[cfg(test)]
+mod tests {}
