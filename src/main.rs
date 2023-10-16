@@ -1,10 +1,11 @@
+pub mod budget;
+pub mod account;
+pub mod cli;
+
 use crate::account::Account;
 use crate::cli::{Action::*, CliArgs};
 use clap::Parser;
 use rusqlite::Connection;
-
-pub mod account;
-pub mod cli;
 
 fn main() {
     let CliArgs { action } = CliArgs::parse();
