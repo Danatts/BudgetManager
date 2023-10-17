@@ -1,9 +1,10 @@
 pub mod budget;
+pub mod transaction;
 pub mod account;
 pub mod cli;
 
 use crate::account::Account;
-use crate::cli::{Action::*, CliArgs};
+use crate::cli::{CliAction::*, CliArgs};
 use clap::Parser;
 use rusqlite::Connection;
 

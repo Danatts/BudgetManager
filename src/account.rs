@@ -78,5 +78,3 @@ pub fn remove_account() {
     unimplemented!()
 }
 
-#[cfg(test)]
-mod tests {}

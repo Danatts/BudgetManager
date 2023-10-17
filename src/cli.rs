@@ -4,11 +4,11 @@ use clap::{Parser, Subcommand};
 #[command(author, version, about, long_about = None)]
 pub struct CliArgs {
     #[command(subcommand)]
-    pub action: Action,
+    pub action: CliAction,
 }
 
 #[derive(Subcommand, Debug)]
-pub enum Action {
+pub enum CliAction {
     /// List all accounts
     List,
     /// Add a new account
