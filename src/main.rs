@@ -1,7 +1,8 @@
 pub mod budget;
+pub mod database;
 pub mod transaction;
-pub mod cli;
 
 fn main() {
-    println!("Hello world!")
+    let db = database::open_db("./database.db3").expect("could not connect to database");
+    database::create_budget_table(&db);
 }
