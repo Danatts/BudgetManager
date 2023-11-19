@@ -1,4 +1,7 @@
-#[derive(Debug)]
+use accounting::Accounting;
+use rusqlite::Connection;
+use std::fmt;
+
 pub struct Budget {
     pub budget_id: Option<u32>,
     pub name: String,
@@ -34,6 +37,95 @@ impl Budget {
 
     pub fn rename(&mut self, new_name: &str) {
         self.name = new_name.to_string();
+    }
+}
+
+impl fmt::Display for Budget {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let ac = Accounting::new_from_seperator("$", 2, ".", ",");
+        write!(
+            f,
+            "{:<25} {:<20} {:<20}",
+            self.name,
+            ac.format_money(self.current_funds),
+            ac.format_money(self.initial_funds)
+        )
+    }
+}
+
+pub fn create_budget_table(db: &Connection) {
+    let query = "
+        CREATE TABLE IF NOT EXISTS budgets (
+            budget_id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL UNIQUE,
+            initial_funds REAL NOT NULL,
+            current_funds REAL NOT NULL
+        );";
+    match db.execute(query, ()) {
+        Ok(_) => println!("table created successfully."),
+        Err(error) => eprintln!("creation failed: {}", error),
+    }
+}
+
+pub fn insert_new_budget(db: &Connection, budget: &Budget) {
+    let query = "
+        INSERT INTO budgets (name, initial_funds, current_funds)
+        VALUES (?1, ?2, ?3);";
+    match db.execute(
+        query,
+        (&budget.name, &budget.initial_funds, &budget.current_funds),
+    ) {
+        Ok(rows) => println!("{} rows were inserted.", rows),
+        Err(error) => eprintln!("insertion failed: {}", error),
+    }
+}
+
+pub fn get_budget_by_id(db: &Connection, id: u32) -> Result<Budget, ()> {
+    let query = "
+        SELECT *
+        FROM budgets
+        WHERE budget_id = ?1;";
+    match db.query_row(query, [id], |row| {
+        Ok(Budget {
+            budget_id: row.get(0)?,
+            name: row.get(1)?,
+            current_funds: row.get(2)?,
+            initial_funds: row.get(3)?,
+        })
+    }) {
+        Ok(budget) => Ok(budget),
+        Err(error) => Err(eprintln!("could not get budget: {}", error)),
+    }
+}
+
+pub fn update_budget(db: &Connection, budget: &Budget) {
+    let query = "
+        UPDATE budgets
+        SET name = ?1,
+            initial_funds = ?2,
+            current_funds = ?3
+        WHERE budget_id = ?4";
+    match db.execute(
+        query,
+        (
+            &budget.name,
+            &budget.initial_funds,
+            &budget.current_funds,
+            &budget.budget_id.unwrap(),
+        ),
+    ) {
+        Ok(rows) => println!("{} rows were updated.", rows),
+        Err(error) => eprintln!("update failed: {}", error),
+    }
+}
+
+pub fn delete_budget_by_id(db: &Connection, id: u32) {
+    let query = "
+        DELETE FROM budgets
+        WHERE budget_id = ?1;";
+    match db.execute(query, [id]) {
+        Ok(rows) => println!("{} rows were deleted.", rows),
+        Err(error) => eprintln!("deletion failed: {}", error),
     }
 }
 
