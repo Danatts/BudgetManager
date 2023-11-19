@@ -40,18 +40,33 @@ impl Budget {
     }
 }
 
+// Display format
+
 impl fmt::Display for Budget {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let ac = Accounting::new_from_seperator("$", 2, ".", ",");
         write!(
             f,
-            "{:<25} {:<20} {:<20}",
+            "{:<25} {:>25} {:>25}",
             self.name,
             ac.format_money(self.current_funds),
             ac.format_money(self.initial_funds)
         )
     }
 }
+
+pub fn list_budgets(db: &Connection) {
+    let budgets = get_all_budgets(db).unwrap();
+    println!(
+        "{:<25}{:>25}{:>25}\n{:-^80}",
+        "BUDGET", "CURRENT FUNDS", "INITIAL FUNDS", ""
+    );
+    for budget in budgets {
+        println!("{budget}")
+    }
+}
+
+// Database queries
 
 pub fn create_budget_table(db: &Connection) {
     let query = "
@@ -96,6 +111,29 @@ pub fn get_budget_by_id(db: &Connection, id: u32) -> Result<Budget, ()> {
         Ok(budget) => Ok(budget),
         Err(error) => Err(eprintln!("could not get budget: {}", error)),
     }
+}
+
+// TODO: Refac error handling
+fn get_all_budgets(db: &Connection) -> Result<Vec<Budget>, ()> {
+    let query = "
+        SELECT *
+        FROM budgets;";
+    let mut stmt = db.prepare(query).unwrap();
+    let budget_iter = stmt
+        .query_map([], |row| {
+            Ok(Budget {
+                budget_id: row.get(0)?,
+                name: row.get(1)?,
+                current_funds: row.get(2)?,
+                initial_funds: row.get(3)?,
+            })
+        })
+        .unwrap();
+    let mut budget_list = Vec::new();
+    for budget in budget_iter {
+        budget_list.push(budget.unwrap());
+    }
+    Ok(budget_list)
 }
 
 pub fn update_budget(db: &Connection, budget: &Budget) {
