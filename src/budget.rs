@@ -35,6 +35,10 @@ impl Budget {
         self.current_funds = amount_to_set;
     }
 
+    pub fn set_initial_funds(&mut self, amount_to_set: f64) {
+        self.initial_funds = amount_to_set;
+    }
+
     pub fn rename(&mut self, new_name: &str) {
         self.name = new_name.to_string();
     }
@@ -63,6 +67,12 @@ pub fn list_budgets(db: &Connection) {
     );
     for budget in budgets {
         println!("{budget}")
+    }
+}
+
+pub fn reset_all_budgets(budgets: &mut Vec<Budget>) {
+    for budget in budgets {
+        budget.reset_funds();
     }
 }
 
@@ -114,7 +124,7 @@ pub fn get_budget_by_id(db: &Connection, id: u32) -> Result<Budget, ()> {
 }
 
 // TODO: Refac error handling
-fn get_all_budgets(db: &Connection) -> Result<Vec<Budget>, ()> {
+pub fn get_all_budgets(db: &Connection) -> Result<Vec<Budget>, ()> {
     let query = "
         SELECT *
         FROM budgets;";
