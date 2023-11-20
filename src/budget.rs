@@ -11,6 +11,7 @@ pub struct Budget {
     pub current_funds: f64,
 }
 
+// TODO: capitalizar el nombre al crear un nuevo presupuesto
 impl Budget {
     pub fn new(name: String, funds: f64) -> Budget {
         Budget {
