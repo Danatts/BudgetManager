@@ -1,5 +1,4 @@
 use std::process;
-
 use rusqlite::Connection;
 
 pub fn open_db(path: &str) -> Connection {
