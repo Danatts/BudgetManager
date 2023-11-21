@@ -27,6 +27,7 @@ fn prompt() -> String {
 // TODO:
 // 1. añadir opción de ayuda
 // 2. implementar elección de la base de datos depende del entorno
+// 3. refactorizar para hacer más legible
 pub fn run() {
     let db = open_db("./database.test.db3");
     println!("\nType 'help' for more information.");
