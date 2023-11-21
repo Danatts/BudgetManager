@@ -9,6 +9,8 @@ use std::io::Write;
 // enum BudgetAction {
 //     List,
 //     New,
+//     Increase,
+//     Reduce,
 //     Reset,
 //     Delete,
 // }
