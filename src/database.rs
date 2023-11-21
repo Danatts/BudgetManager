@@ -1,9 +1,13 @@
+use std::process;
+
 use rusqlite::Connection;
 
 pub fn open_db(path: &str) -> Connection {
-    let db = match Connection::open(path) {
+    match Connection::open(path) {
         Ok(db) => db,
-        Err(error) => panic!("database connection failed: {}", error),
-    };
-    db
+        Err(error) => {
+            eprintln!("database connection failed: {}", error);
+            process::exit(1);
+        }
+    }
 }
