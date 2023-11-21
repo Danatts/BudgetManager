@@ -1,7 +1,5 @@
-//TODO: Quitar los 'unwrap'
-
 use accounting::Accounting;
-use rusqlite::Connection;
+use rusqlite::{Connection, Error};
 use std::fmt;
 
 pub struct Budget {
@@ -68,9 +66,7 @@ pub fn print_budget(budget: &Budget) {
     );
 }
 
-// TODO: refactorizar para que acepte el vector y no la conexión
-pub fn list_all_budgets(db: &Connection) {
-    let budgets = get_all_budgets(db).unwrap();
+pub fn print_all_budgets(budgets: Vec<Budget>) {
     println!(
         "\n {:<5}{:<20}{:>25}{:>25}\n{:-^80}",
         "ID", "BUDGET", "CURRENT FUNDS", "INITIAL FUNDS", ""
@@ -86,7 +82,8 @@ pub fn reset_all_budgets(budgets: &mut Vec<Budget>) {
     }
 }
 
-pub fn create_budget_table(db: &Connection) {
+// TODO: Incorporar al main
+pub fn create_budget_table(db: &Connection) -> Result<usize, Error> {
     let query = "
         CREATE TABLE IF NOT EXISTS budgets (
             budget_id INTEGER PRIMARY KEY,
@@ -94,74 +91,62 @@ pub fn create_budget_table(db: &Connection) {
             initial_funds REAL NOT NULL,
             current_funds REAL NOT NULL
         );";
-    match db.execute(query, ()) {
-        Ok(_) => println!("Table created successfully."),
-        Err(error) => eprintln!("Creation failed: {}.", error),
-    }
+    db.execute(query, ())
 }
 
-pub fn insert_new_budget(db: &Connection, budget: &Budget) {
+pub fn insert_new_budget(db: &Connection, budget: &Budget) -> Result<usize, Error> {
     let query = "
         INSERT INTO budgets (name, initial_funds, current_funds)
         VALUES (?1, ?2, ?3);";
-    match db.execute(
+    db.execute(
         query,
         (&budget.name, &budget.initial_funds, &budget.current_funds),
-    ) {
-        Ok(rows) => println!("{} rows were inserted.", rows),
-        Err(error) => eprintln!("Insertion failed: {}.", error),
-    }
+    )
 }
 
-pub fn get_budget_by_id(db: &Connection, id: u32) -> Result<Budget, ()> {
+pub fn get_budget_by_id(db: &Connection, id: u32) -> Result<Budget, Error> {
     let query = "
         SELECT *
         FROM budgets
         WHERE budget_id = ?1;";
-    match db.query_row(query, [id], |row| {
+    db.query_row(query, [id], |row| {
         Ok(Budget {
             budget_id: row.get(0)?,
             name: row.get(1)?,
             initial_funds: row.get(2)?,
             current_funds: row.get(3)?,
         })
-    }) {
-        Ok(budget) => Ok(budget),
-        Err(error) => Err(eprintln!("Could not get budget: {}.", error)),
-    }
+    })
 }
 
-// TODO: Refactorizar el control de errores
-pub fn get_all_budgets(db: &Connection) -> Result<Vec<Budget>, ()> {
+pub fn get_all_budgets(db: &Connection) -> Result<Vec<Budget>, Error> {
     let query = "
         SELECT *
         FROM budgets;";
-    let mut stmt = db.prepare(query).unwrap();
-    let budget_iter = stmt
-        .query_map([], |row| {
-            Ok(Budget {
-                budget_id: row.get(0)?,
-                name: row.get(1)?,
-                initial_funds: row.get(2)?,
-                current_funds: row.get(3)?,
-            })
+    let mut stmt = db.prepare(query)?;
+    let budget_iter = stmt.query_map([], |row| {
+        Ok(Budget {
+            budget_id: row.get(0)?,
+            name: row.get(1)?,
+            initial_funds: row.get(2)?,
+            current_funds: row.get(3)?,
         })
-        .unwrap();
+    })?;
     let mut budget_list = Vec::new();
     for budget in budget_iter {
-        budget_list.push(budget.unwrap());
+        budget_list.push(budget?);
     }
     Ok(budget_list)
 }
 
-pub fn update_budget(db: &Connection, budget: &Budget) {
+pub fn update_budget(db: &Connection, budget: &Budget) -> Result<usize, Error> {
     let query = "
         UPDATE budgets
         SET name = ?1,
             initial_funds = ?2,
             current_funds = ?3
         WHERE budget_id = ?4";
-    match db.execute(
+    db.execute(
         query,
         (
             &budget.name,
@@ -169,20 +154,14 @@ pub fn update_budget(db: &Connection, budget: &Budget) {
             &budget.current_funds,
             &budget.budget_id.unwrap(),
         ),
-    ) {
-        Ok(rows) => println!("{} rows were updated.", rows),
-        Err(error) => eprintln!("Update failed: {}.", error),
-    }
+    )
 }
 
-pub fn delete_budget_by_id(db: &Connection, id: u32) {
+pub fn delete_budget_by_id(db: &Connection, id: u32) -> Result<usize, Error> {
     let query = "
         DELETE FROM budgets
         WHERE budget_id = ?1;";
-    match db.execute(query, [id]) {
-        Ok(rows) => println!("{} rows were deleted.", rows),
-        Err(error) => eprintln!("Deletion failed: {}.", error),
-    }
+    db.execute(query, [id])
 }
 
 #[cfg(test)]
