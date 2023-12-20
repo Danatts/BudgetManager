@@ -1,7 +1,7 @@
+use crate::utils::capitalize;
 use accounting::Accounting;
 use rusqlite::{Connection, Error};
 use std::fmt;
-use crate::utils::capitalize;
 
 pub struct Budget {
     pub budget_id: Option<u32>,
@@ -11,7 +11,7 @@ pub struct Budget {
 }
 
 impl Budget {
-    pub fn new(name: String, funds: f64) -> Budget {
+    pub fn new(name: &str, funds: f64) -> Budget {
         Budget {
             budget_id: None,
             name: capitalize(&name),
@@ -20,11 +20,11 @@ impl Budget {
         }
     }
 
-    pub fn increase_funds(&mut self, amount_to_increase: f64) {
+    pub fn increase_funds(&mut self, amount_to_increase: &f64) {
         self.current_funds += amount_to_increase;
     }
 
-    pub fn reduce_funds(&mut self, amount_to_reduce: f64) {
+    pub fn reduce_funds(&mut self, amount_to_reduce: &f64) {
         self.current_funds -= amount_to_reduce;
     }
 
@@ -32,15 +32,15 @@ impl Budget {
         self.current_funds = self.initial_funds;
     }
 
-    pub fn set_current_funds(&mut self, amount_to_set: f64) {
-        self.current_funds = amount_to_set;
+    pub fn set_current_funds(&mut self, amount_to_set: &f64) {
+        self.current_funds = amount_to_set.to_owned();
     }
 
-    pub fn set_initial_funds(&mut self, amount_to_set: f64) {
-        self.initial_funds = amount_to_set;
+    pub fn set_initial_funds(&mut self, amount_to_set: &f64) {
+        self.initial_funds = amount_to_set.to_owned();
     }
 
-    pub fn rename(&mut self, new_name: String) {
+    pub fn rename(&mut self, new_name: &str) {
         self.name = new_name.to_string();
     }
 }
@@ -66,7 +66,7 @@ pub fn print_budget(budget: &Budget) {
     );
 }
 
-pub fn print_all_budgets(budgets: Vec<Budget>) {
+pub fn print_all_budgets(budgets: &Vec<Budget>) {
     println!(
         "\n {:<5}{:<20}{:>25}{:>25}\n{:-^80}",
         "ID", "BUDGET", "CURRENT FUNDS", "INITIAL FUNDS", ""
@@ -103,7 +103,7 @@ pub fn insert_new_budget(db: &Connection, budget: &Budget) -> Result<usize, Erro
     )
 }
 
-pub fn get_budget_by_id(db: &Connection, id: u32) -> Result<Budget, Error> {
+pub fn get_budget_by_id(db: &Connection, id: &u32) -> Result<Budget, Error> {
     let query = "
         SELECT *
         FROM budgets
@@ -156,7 +156,7 @@ pub fn update_budget(db: &Connection, budget: &Budget) -> Result<usize, Error> {
     )
 }
 
-pub fn delete_budget_by_id(db: &Connection, id: u32) -> Result<usize, Error> {
+pub fn delete_budget_by_id(db: &Connection, id: &u32) -> Result<usize, Error> {
     let query = "
         DELETE FROM budgets
         WHERE budget_id = ?1;";
@@ -169,73 +169,73 @@ mod tests {
 
     #[test]
     fn reduce_funds_ok() {
-        let mut budget = Budget::new("Test".to_string(), 5000.0);
-        budget.reduce_funds(3000.0);
+        let mut budget = Budget::new("Test", 5000.0);
+        budget.reduce_funds(&3000.0);
         assert_eq!(budget.current_funds, 2000.0);
     }
 
     #[test]
     fn reduce_funds_ko() {
-        let mut budget = Budget::new("Test".to_string(), 5000.0);
-        budget.reduce_funds(3000.0);
+        let mut budget = Budget::new("Test", 5000.0);
+        budget.reduce_funds(&3000.0);
         assert_ne!(budget.current_funds, 3000.0);
     }
 
     #[test]
     fn increase_funds_ok() {
-        let mut budget = Budget::new("Test".to_string(), 5000.0);
-        budget.increase_funds(3000.0);
+        let mut budget = Budget::new("Test", 5000.0);
+        budget.increase_funds(&3000.0);
         assert_eq!(budget.current_funds, 8000.0);
     }
 
     #[test]
     fn increase_funds_ko() {
-        let mut budget = Budget::new("Test".to_string(), 5000.0);
-        budget.increase_funds(3000.0);
+        let mut budget = Budget::new("Test", 5000.0);
+        budget.increase_funds(&3000.0);
         assert_ne!(budget.current_funds, 7000.0);
     }
 
     #[test]
     fn reset_funds_ok() {
-        let mut budget = Budget::new("Test".to_string(), 5000.0);
-        budget.increase_funds(3000.0);
+        let mut budget = Budget::new("Test", 5000.0);
+        budget.increase_funds(&3000.0);
         budget.reset_funds();
         assert_eq!(budget.current_funds, budget.initial_funds);
     }
 
     #[test]
     fn reset_funds_ko() {
-        let mut budget = Budget::new("Test".to_string(), 5000.0);
-        budget.increase_funds(3000.0);
+        let mut budget = Budget::new("Test", 5000.0);
+        budget.increase_funds(&3000.0);
         budget.reset_funds();
         assert_ne!(budget.current_funds, 2000.0);
     }
 
     #[test]
     fn set_funds_ok() {
-        let mut budget = Budget::new("Test".to_string(), 5000.0);
-        budget.set_current_funds(3000.0);
+        let mut budget = Budget::new("Test", 5000.0);
+        budget.set_current_funds(&3000.0);
         assert_eq!(budget.current_funds, 3000.0);
     }
 
     #[test]
     fn set_funds_ko() {
-        let mut budget = Budget::new("Test".to_string(), 5000.0);
-        budget.set_current_funds(3000.0);
+        let mut budget = Budget::new("Test", 5000.0);
+        budget.set_current_funds(&3000.0);
         assert_ne!(budget.current_funds, 5000.0);
     }
 
     #[test]
     fn rename_ok() {
-        let mut budget = Budget::new("Test".to_string(), 5000.0);
-        budget.rename("New name".to_string());
+        let mut budget = Budget::new("Test", 5000.0);
+        budget.rename("New name");
         assert_eq!(budget.name, "New name");
     }
 
     #[test]
     fn rename_ko() {
-        let mut budget = Budget::new("Test".to_string(), 5000.0);
-        budget.rename("New name".to_string());
+        let mut budget = Budget::new("Test", 5000.0);
+        budget.rename("New name");
         assert_ne!(budget.name, String::from("Test".to_string()));
     }
 }

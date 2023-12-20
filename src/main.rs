@@ -6,5 +6,5 @@ pub mod utils;
 use cli::run;
 
 fn main() {
-    run();
+    run()
 }
