@@ -1,6 +1,6 @@
 use crate::budget::{
-    delete_budget_by_id, get_all_budgets, get_budget_by_id, insert_new_budget, print_all_budgets,
-    print_budget, update_budget, Budget,
+    create_budget_table, delete_budget_by_id, get_all_budgets, get_budget_by_id, insert_new_budget,
+    print_all_budgets, print_budget, update_budget, Budget,
 };
 use crate::database::open_db;
 use std::io::Write;
@@ -32,6 +32,10 @@ fn prompt() -> String {
 // 3. refactorizar para hacer más legible
 pub fn run() {
     let db = open_db("./database.test.db3");
+    match create_budget_table(&db) {
+        Ok(_) => {}
+        Err(error) => panic!("Error: {}", error),
+    }
     println!("\nType 'help' for more information.");
     loop {
         println!("\nChoose an action:");
