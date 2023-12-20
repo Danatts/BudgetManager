@@ -2,9 +2,6 @@ use home;
 use rusqlite::Connection;
 use std::process;
 
-// TODO:
-// 1. el usuario pueda dar una ruta que quiera
-// 2. implementar elección de la base de datos depende del entorno
 pub fn open_default_db() -> Connection {
     let path = home::home_dir().map(|mut home| {
         home.push("budget.test.db3");

@@ -2,8 +2,9 @@ use crate::budget::{
     create_budget_table, delete_budget_by_id, get_all_budgets, get_budget_by_id, insert_new_budget,
     print_all_budgets, print_budget, update_budget, Budget,
 };
-use crate::database::open_default_db;
+use crate::transaction::{create_transaction_table, insert_transaction, Transaction};
 use clap::{Parser, Subcommand};
+use rusqlite::Connection;
 
 #[derive(Subcommand)]
 pub enum Commands {
@@ -71,15 +72,26 @@ struct Cli {
     command: Commands,
 }
 
-pub fn run() {
-    let db = open_default_db();
-
+pub fn cli(db: &Connection) {
     match create_budget_table(&db) {
         Ok(_) => {}
         Err(error) => panic!("Error: {}.", error),
     }
 
+    match create_transaction_table(&db) {
+        Ok(_) => {}
+        Err(error) => panic!("Error: {}.", error),
+    }
+
     let cli = Cli::parse();
+
+    let action = match &cli.command {
+        Commands::Current { id: _, amount: _ } => "Set current funds",
+        Commands::Increase { id: _, amount: _ } => "Increase funds",
+        Commands::Initial { id: _, amount: _ } => "Set initial funds",
+        Commands::Reduce { id: _, amount: _ } => "Reduce funds",
+        _ => "",
+    };
 
     match &cli.command {
         Commands::Current { id, amount } => match get_budget_by_id(&db, id) {
@@ -87,6 +99,8 @@ pub fn run() {
                 budget.set_current_funds(amount);
                 match update_budget(&db, &budget) {
                     Ok(rows) => {
+                        let transaction = Transaction::new(id, action, amount);
+                        let _ = insert_transaction(&db, &transaction);
                         println!("{} record updated.", rows);
                         print_budget(&budget);
                     }
@@ -104,6 +118,8 @@ pub fn run() {
                 budget.increase_funds(amount);
                 match update_budget(&db, &budget) {
                     Ok(rows) => {
+                        let transaction = Transaction::new(id, action, amount);
+                        let _ = insert_transaction(&db, &transaction);
                         println!("{} record updated.", rows);
                         print_budget(&budget);
                     }
@@ -117,6 +133,8 @@ pub fn run() {
                 budget.set_initial_funds(amount);
                 match update_budget(&db, &budget) {
                     Ok(rows) => {
+                        let transaction = Transaction::new(id, action, amount);
+                        let _ = insert_transaction(&db, &transaction);
                         println!("{} record updated.", rows);
                         print_budget(&budget);
                     }
@@ -144,6 +162,8 @@ pub fn run() {
                 budget.reduce_funds(amount);
                 match update_budget(&db, &budget) {
                     Ok(rows) => {
+                        let transaction = Transaction::new(id, action, amount);
+                        let _ = insert_transaction(&db, &transaction);
                         println!("{} record updated.", rows);
                         print_budget(&budget);
                     }
