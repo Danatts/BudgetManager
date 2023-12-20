@@ -2,7 +2,7 @@ use crate::budget::{
     create_budget_table, delete_budget_by_id, get_all_budgets, get_budget_by_id, insert_new_budget,
     print_all_budgets, print_budget, update_budget, Budget,
 };
-use crate::database::open_db;
+use crate::database::open_default_db;
 use std::io::Write;
 
 // TODO: Refactorizar para usar enum
@@ -26,12 +26,9 @@ fn prompt() -> String {
     return line.trim().to_string();
 }
 
-// TODO:
-// 1. añadir opción de ayuda
-// 2. implementar elección de la base de datos depende del entorno
-// 3. refactorizar para hacer más legible
+// TODO: implementar clap
 pub fn run() {
-    let db = open_db("./database.test.db3");
+    let db = open_default_db();
     match create_budget_table(&db) {
         Ok(_) => {}
         Err(error) => panic!("Error: {}", error),
