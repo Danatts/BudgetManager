@@ -61,6 +61,7 @@ enum Commands {
         #[arg(value_name = "ID")]
         id: u32,
     },
+    /// Reset all budgets
     Resetall,
 }
 
