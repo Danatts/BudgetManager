@@ -82,7 +82,6 @@ pub fn reset_all_budgets(budgets: &mut Vec<Budget>) {
     }
 }
 
-// TODO: Incorporar al main
 pub fn create_budget_table(db: &Connection) -> Result<usize, Error> {
     let query = "
         CREATE TABLE IF NOT EXISTS budgets (
