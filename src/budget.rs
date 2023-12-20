@@ -1,6 +1,7 @@
 use accounting::Accounting;
 use rusqlite::{Connection, Error};
 use std::fmt;
+use crate::utils::capitalize;
 
 pub struct Budget {
     pub budget_id: Option<u32>,
@@ -9,12 +10,11 @@ pub struct Budget {
     pub current_funds: f64,
 }
 
-// TODO: capitalizar el nombre al crear un nuevo presupuesto
 impl Budget {
     pub fn new(name: String, funds: f64) -> Budget {
         Budget {
             budget_id: None,
-            name,
+            name: capitalize(&name),
             initial_funds: funds,
             current_funds: funds,
         }
