@@ -1,167 +1,191 @@
 use crate::budget::{
     create_budget_table, delete_budget_by_id, get_all_budgets, get_budget_by_id, insert_new_budget,
-    print_all_budgets, print_budget, update_budget, Budget,
+    print_all_budgets, print_budget, reset_all_budgets, update_budget, Budget,
 };
 use crate::database::open_default_db;
-use std::io::Write;
+use clap::{Parser, Subcommand};
 
-// TODO: Refactorizar para usar enum
-// enum BudgetAction {
-//     List,
-//     New,
-//     Increase,
-//     Reduce,
-//     Reset,
-//     Delete,
-// }
-
-fn prompt() -> String {
-    let mut line = String::new();
-    print!("{}", ">> ");
-    std::io::stdout().flush().unwrap();
-    std::io::stdin()
-        .read_line(&mut line)
-        .expect("Could not read a line.");
-
-    return line.trim().to_string();
+#[derive(Debug, Subcommand)]
+enum Commands {
+    /// Set current budget funds
+    Current {
+        #[arg(short, value_name = "ID")]
+        id: u32,
+        #[arg(value_name = "AMOUNT")]
+        amount: f64,
+    },
+    /// Delete a budget
+    Delete {
+        #[arg(value_name = "ID")]
+        id: u32,
+    },
+    /// Set initial budget funds
+    Initial {
+        #[arg(value_name = "ID")]
+        id: u32,
+        #[arg(value_name = "AMOUNT")]
+        amount: f64,
+    },
+    /// Increase budget funds
+    Increase {
+        #[arg(value_name = "ID")]
+        id: u32,
+        #[arg(value_name = "AMOUNT")]
+        amount: f64,
+    },
+    /// List all budgets
+    List,
+    /// Create a new budget
+    New {
+        #[arg(value_name = "NAME")]
+        name: String,
+        #[arg(value_name = "FUNDS")]
+        funds: f64,
+    },
+    /// Reduce budget funds
+    Reduce {
+        #[arg(value_name = "ID")]
+        id: u32,
+        #[arg(value_name = "AMOUNT")]
+        amount: f64,
+    },
+    /// Rename a budget
+    Rename {
+        #[arg(value_name = "ID")]
+        id: u32,
+        #[arg(value_name = "NEW NAME")]
+        name: String,
+    },
+    /// Reset a budget to initial funds
+    Reset {
+        #[arg(value_name = "ID")]
+        id: u32,
+    },
+    /// Reset all budgets
+    Resetall,
 }
 
-// TODO: implementar clap
+#[derive(Debug, Parser)]
+#[command(author, version, about, long_about = None)]
+#[command(propagate_version = true)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
 pub fn run() {
     let db = open_default_db();
+
     match create_budget_table(&db) {
         Ok(_) => {}
-        Err(error) => panic!("Error: {}", error),
+        Err(error) => panic!("Error: {}.", error),
     }
-    println!("\nType 'help' for more information.");
-    loop {
-        println!("\nChoose an action:");
-        let input = prompt();
-        if input == "list" {
-            let budgets = get_all_budgets(&db);
-            match budgets {
-                Ok(budgets) => print_all_budgets(budgets),
-                Err(error) => eprintln!("Error: {}.", error),
-            }
-        } else if input == "new" {
-            println!("New budget name:");
-            let name = prompt();
-            println!("Budget inital funds:");
-            let funds = prompt().parse::<f64>();
-            if let Ok(funds) = funds {
-                let budget = Budget::new(name, funds);
-                match insert_new_budget(&db, &budget) {
-                    Ok(rows) => println!("{} record inserted.", rows),
-                    Err(error) => eprintln!("Error: {}", error),
-                }
-            } else {
-                eprintln!("Enter a valid input.");
-            }
-        } else if input == "reset" {
-            println!("Budget id:");
-            let id = prompt().parse::<u32>();
-            if let Ok(id) = id {
-                match get_budget_by_id(&db, id) {
-                    Ok(mut budget) => {
-                        budget.reset_funds();
-                        match update_budget(&db, &budget) {
-                            Ok(rows) => {
-                                println!("{} record updated.", rows);
-                                print_budget(&budget);
-                            }
-                            Err(error) => eprintln!("Error: {}", error),
-                        };
-                    }
-                    Err(error) => eprintln!("Error: {}", error),
-                }
-            } else {
-                println!("Enter a valid input.");
-            }
-        } else if input == "reduce" {
-            println!("Budget id:");
-            let id = prompt().parse::<u32>();
-            if let Ok(id) = id {
-                match get_budget_by_id(&db, id) {
-                    Ok(mut budget) => {
-                        println!("Amount:");
-                        let amount = prompt().parse::<f64>();
-                        if let Ok(amount) = amount {
-                            budget.reduce_funds(amount);
-                            match update_budget(&db, &budget) {
-                                Ok(rows) => {
-                                    println!("{} record updated.", rows);
-                                    print_budget(&budget);
-                                }
-                                Err(error) => eprintln!("Error: {}", error),
-                            };
-                        } else {
-                            println!("Enter a valid input.");
-                        }
-                    }
-                    Err(error) => eprintln!("Error: {}", error),
-                }
-            } else {
-                println!("Enter a valid input.");
-            }
-        } else if input == "increase" {
-            println!("Budget id:");
-            let id = prompt().parse::<u32>();
-            if let Ok(id) = id {
-                match get_budget_by_id(&db, id) {
-                    Ok(mut budget) => {
-                        println!("Amount:");
-                        let amount = prompt().parse::<f64>();
-                        if let Ok(amount) = amount {
-                            budget.increase_funds(amount);
-                            match update_budget(&db, &budget) {
-                                Ok(rows) => {
-                                    println!("{} record updated.", rows);
-                                    print_budget(&budget);
-                                }
-                                Err(error) => eprintln!("Error: {}", error),
-                            };
-                        } else {
-                            println!("Enter a valid input.");
-                        }
-                    }
-                    Err(error) => eprintln!("Error: {}", error),
-                }
-            } else {
-                println!("Enter a valid input.");
-            }
-        } else if input == "delete" {
-            println!("Budget id:");
-            let id = prompt().parse::<u32>();
-            if let Ok(id) = id {
-                match delete_budget_by_id(&db, id) {
-                    Ok(rows) => println!("{} record deleted.", rows),
-                    Err(error) => eprintln!("Error: {}", error),
-                }
-            }
-        } else if input == "rename" {
-            println!("Budget id:");
-            let id = prompt().parse::<u32>();
-            if let Ok(id) = id {
-                match get_budget_by_id(&db, id) {
-                    Ok(mut budget) => {
-                        println!("New name:");
-                        let new_name = prompt();
-                        budget.rename(new_name);
-                        match update_budget(&db, &budget) {
-                            Ok(rows) => {
-                                println!("{} record updated.", rows);
-                                print_budget(&budget);
-                            }
-                            Err(error) => eprintln!("Error: {}", error),
-                        };
+
+    let cli = Cli::parse();
+
+    match &cli.command {
+        Commands::Current { id, amount } => match get_budget_by_id(&db, id) {
+            Ok(mut budget) => {
+                budget.set_current_funds(amount);
+                match update_budget(&db, &budget) {
+                    Ok(rows) => {
+                        println!("{} record updated.", rows);
+                        print_budget(&budget);
                     }
                     Err(error) => eprintln!("Error: {}", error),
                 }
             }
-        } else if input == "exit" {
-            break;
-        } else {
-            println!("Enter a valid option: type 'help' for more information");
+            Err(error) => eprintln!("Error: {}", error),
+        },
+        Commands::Delete { id } => match delete_budget_by_id(&db, id) {
+            Ok(rows) => println!("{} record deleted.", rows),
+            Err(error) => eprintln!("Error: {}", error),
+        },
+        Commands::Increase { id, amount } => match get_budget_by_id(&db, id) {
+            Ok(mut budget) => {
+                budget.increase_funds(amount);
+                match update_budget(&db, &budget) {
+                    Ok(rows) => {
+                        println!("{} record updated.", rows);
+                        print_budget(&budget);
+                    }
+                    Err(error) => eprintln!("Error: {}", error),
+                }
+            }
+            Err(error) => eprintln!("Error: {}", error),
+        },
+        Commands::Initial { id, amount } => match get_budget_by_id(&db, id) {
+            Ok(mut budget) => {
+                budget.set_initial_funds(amount);
+                match update_budget(&db, &budget) {
+                    Ok(rows) => {
+                        println!("{} record updated.", rows);
+                        print_budget(&budget);
+                    }
+                    Err(error) => eprintln!("Error: {}", error),
+                }
+            }
+            Err(error) => eprintln!("Error: {}", error),
+        },
+        Commands::List => match get_all_budgets(&db) {
+            Ok(budgets) => print_all_budgets(&budgets),
+            Err(error) => eprintln!("Error: {}.", error),
+        },
+        Commands::New { name, funds } => {
+            let budget = Budget::new(name, funds.to_owned());
+            match insert_new_budget(&db, &budget) {
+                Ok(rows) => {
+                    println!("{} record inserted.", rows);
+                    print_budget(&budget);
+                }
+                Err(error) => eprintln!("Error: {}", error),
+            }
         }
+        Commands::Reduce { id, amount } => match get_budget_by_id(&db, id) {
+            Ok(mut budget) => {
+                budget.reduce_funds(amount);
+                match update_budget(&db, &budget) {
+                    Ok(rows) => {
+                        println!("{} record updated.", rows);
+                        print_budget(&budget);
+                    }
+                    Err(error) => eprintln!("Error: {}", error),
+                }
+            }
+            Err(error) => eprintln!("Error: {}", error),
+        },
+        Commands::Rename { id, name } => match get_budget_by_id(&db, id) {
+            Ok(mut budget) => {
+                budget.rename(name);
+                match update_budget(&db, &budget) {
+                    Ok(rows) => {
+                        println!("{} record updated.", rows);
+                        print_budget(&budget);
+                    }
+                    Err(error) => eprintln!("Error: {}", error),
+                }
+            }
+            Err(error) => eprintln!("Error: {}", error),
+        },
+        Commands::Reset { id } => match get_budget_by_id(&db, id) {
+            Ok(mut budget) => {
+                budget.reset_funds();
+                match update_budget(&db, &budget) {
+                    Ok(rows) => {
+                        println!("{} record updated.", rows);
+                        print_budget(&budget);
+                    }
+                    Err(error) => eprintln!("Error: {}", error),
+                }
+            }
+            Err(error) => eprintln!("Error: {}", error),
+        },
+        Commands::Resetall => match get_all_budgets(&db) {
+            Ok(mut budgets) => {
+                reset_all_budgets(&mut budgets);
+                print_all_budgets(&budgets)
+            }
+            Err(error) => eprintln!("Error: {}", error),
+        },
     }
 }

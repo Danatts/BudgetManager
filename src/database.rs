@@ -14,7 +14,7 @@ pub fn open_default_db() -> Connection {
     let path = match path {
         Some(path) => path,
         None => {
-            eprintln!("Unable to get home directory");
+            eprintln!("Unable to get home directory.");
             process::exit(1);
         }
     };
@@ -22,7 +22,7 @@ pub fn open_default_db() -> Connection {
     match Connection::open(path) {
         Ok(db) => db,
         Err(error) => {
-            eprintln!("Database connection failed: {}", error);
+            eprintln!("Database connection failed: {}.", error);
             process::exit(1);
         }
     }
