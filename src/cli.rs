@@ -1,12 +1,12 @@
 use crate::budget::{
     create_budget_table, delete_budget_by_id, get_all_budgets, get_budget_by_id, insert_new_budget,
-    print_all_budgets, print_budget, reset_all_budgets, update_budget, Budget,
+    print_all_budgets, print_budget, update_budget, Budget,
 };
 use crate::database::open_default_db;
 use clap::{Parser, Subcommand};
 
-#[derive(Debug, Subcommand)]
-enum Commands {
+#[derive(Subcommand)]
+pub enum Commands {
     /// Set current budget funds
     Current {
         #[arg(short, value_name = "ID")]
@@ -61,11 +61,9 @@ enum Commands {
         #[arg(value_name = "ID")]
         id: u32,
     },
-    /// Reset all budgets
-    Resetall,
 }
 
-#[derive(Debug, Parser)]
+#[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 #[command(propagate_version = true)]
 struct Cli {
@@ -177,13 +175,6 @@ pub fn run() {
                     }
                     Err(error) => eprintln!("Error: {}", error),
                 }
-            }
-            Err(error) => eprintln!("Error: {}", error),
-        },
-        Commands::Resetall => match get_all_budgets(&db) {
-            Ok(mut budgets) => {
-                reset_all_budgets(&mut budgets);
-                print_all_budgets(&budgets)
             }
             Err(error) => eprintln!("Error: {}", error),
         },

@@ -76,12 +76,6 @@ pub fn print_all_budgets(budgets: &Vec<Budget>) {
     }
 }
 
-pub fn reset_all_budgets(budgets: &mut Vec<Budget>) {
-    for budget in budgets {
-        budget.reset_funds();
-    }
-}
-
 pub fn create_budget_table(db: &Connection) -> Result<usize, Error> {
     let query = "
         CREATE TABLE IF NOT EXISTS budgets (
