@@ -6,7 +6,7 @@ Interactive budget manager CLI application written in Rust🦀.
 
 - [ ] Add datetime attribute to Transaction
 - [ ] Implement Display trait to Transaction
-- [ ] Implement description option on cli
+- [x] Implement description option on cli
 - [ ] Change database by enviroment
 - [ ] Let the user choose the database path
 - [ ] Refac Transaction struct to include lifetime
