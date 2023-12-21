@@ -145,7 +145,7 @@ pub fn update_budget(db: &Connection, budget: &Budget) -> Result<usize, Error> {
             &budget.name,
             &budget.initial_funds,
             &budget.current_funds,
-            &budget.budget_id.unwrap(),
+            &budget.budget_id,
         ),
     )
 }

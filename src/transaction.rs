@@ -10,13 +10,13 @@ pub struct Transaction {
 }
 
 impl Transaction {
-    pub fn new(budget_id: &u32, action: &str, amount: &f64) -> Transaction {
+    pub fn new(budget_id: &u32, action: &str, amount: &f64, desc: &Option<String>) -> Transaction {
         Transaction {
             transaction_id: None,
             budget_id: budget_id.to_owned(),
             action: action.to_string(),
             amount: amount.to_owned(),
-            desc: None,
+            desc: desc.to_owned(),
         }
     }
 }
