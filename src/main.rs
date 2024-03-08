@@ -1,8 +1,8 @@
-pub mod budget;
-pub mod cli;
-pub mod database;
-pub mod transaction;
-pub mod utils;
+mod budget;
+mod cli;
+mod database;
+mod transaction;
+mod utils;
 
 use cli::cli;
 use database::open_default_db;

@@ -2,7 +2,10 @@ use crate::budget::{
     create_budget_table, delete_budget_by_id, get_all_budgets, get_budget_by_id, insert_new_budget,
     print_all_budgets, print_budget, update_budget, Budget,
 };
-use crate::transaction::{create_transaction_table, insert_transaction, Transaction};
+use crate::transaction::{
+    create_transaction_table, get_all_transactions, get_transactions_by_budget, insert_transaction,
+    print_transactions, Transaction,
+};
 use clap::{Parser, Subcommand};
 use rusqlite::Connection;
 
@@ -21,6 +24,11 @@ pub enum Commands {
     Delete {
         #[arg(value_name = "ID")]
         id: u32,
+    },
+    /// Print transaction history
+    History {
+        #[arg(value_name = "ID")]
+        id: Option<u32>,
     },
     /// Set initial budget funds
     Initial {
@@ -140,6 +148,16 @@ pub fn cli(db: &Connection) {
         Commands::Delete { id } => match delete_budget_by_id(&db, id) {
             Ok(rows) => println!("{} record deleted.", rows),
             Err(error) => eprintln!("Error: {}", error),
+        },
+        Commands::History { id } => match id {
+            Some(id) => match get_transactions_by_budget(&db, id) {
+                Ok(list) => print_transactions(&list),
+                Err(error) => eprintln!("Error: {}", error),
+            },
+            None => match get_all_transactions(&db) {
+                Ok(list) => print_transactions(&list),
+                Err(error) => eprintln!("Error: {}", error),
+            },
         },
         Commands::Increase {
             id,

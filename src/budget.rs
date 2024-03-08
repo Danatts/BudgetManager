@@ -33,15 +33,15 @@ impl Budget {
     }
 
     pub fn set_current_funds(&mut self, amount_to_set: &f64) {
-        self.current_funds = amount_to_set.to_owned();
+        self.current_funds = *amount_to_set;
     }
 
     pub fn set_initial_funds(&mut self, amount_to_set: &f64) {
-        self.initial_funds = amount_to_set.to_owned();
+        self.initial_funds = *amount_to_set;
     }
 
     pub fn rename(&mut self, new_name: &str) {
-        self.name = new_name.to_string();
+        self.name = capitalize(new_name);
     }
 }
 
