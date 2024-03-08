@@ -1,3 +1,5 @@
+use std::process;
+
 use crate::budget::{
     create_budget_table, delete_budget_by_id, get_all_budgets, get_budget_by_id, insert_new_budget,
     print_all_budgets, print_budget, update_budget, Budget,
@@ -77,6 +79,8 @@ pub enum Commands {
     Reset {
         #[arg(value_name = "ID")]
         id: u32,
+        #[arg(long, short, value_name = "DESCRIPTION")]
+        description: Option<String>,
     },
 }
 
@@ -91,12 +95,18 @@ struct Cli {
 pub fn cli(db: &Connection) {
     match create_budget_table(&db) {
         Ok(_) => {}
-        Err(error) => panic!("Error: {}.", error),
+        Err(error) => {
+            eprintln!("Error: {}.", error);
+            process::exit(1);
+        }
     }
 
     match create_transaction_table(&db) {
         Ok(_) => {}
-        Err(error) => panic!("Error: {}.", error),
+        Err(error) => {
+            eprintln!("Error: {}.", error);
+            process::exit(1);
+        }
     }
 
     let cli = Cli::parse();
@@ -122,6 +132,10 @@ pub fn cli(db: &Connection) {
             amount: _,
             description: _,
         } => "Reduce funds",
+        Commands::Reset {
+            id: _,
+            description: _,
+        } => "Reset funds",
         _ => "",
     };
 
@@ -243,11 +257,14 @@ pub fn cli(db: &Connection) {
             }
             Err(error) => eprintln!("Error: {}", error),
         },
-        Commands::Reset { id } => match get_budget_by_id(&db, id) {
+        Commands::Reset { id, description } => match get_budget_by_id(&db, id) {
             Ok(mut budget) => {
                 budget.reset_funds();
                 match update_budget(&db, &budget) {
                     Ok(rows) => {
+                        let transaction =
+                            Transaction::new(id, action, &budget.initial_funds, description);
+                        let _ = insert_transaction(&db, &transaction);
                         println!("{} record updated.", rows);
                         print_budget(&budget);
                     }
