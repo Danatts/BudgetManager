@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::process;
 
 use crate::budget::{
@@ -87,12 +88,14 @@ pub enum Commands {
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 #[command(propagate_version = true)]
-struct Cli {
+pub struct Cli {
     #[command(subcommand)]
-    command: Commands,
+    pub command: Commands,
+    #[arg(long, short)]
+    pub database: Option<PathBuf>,
 }
 
-pub fn cli(db: &Connection) {
+pub fn run(db: Connection, command: Commands) {
     match create_budget_table(&db) {
         Ok(_) => {}
         Err(error) => {
@@ -109,9 +112,7 @@ pub fn cli(db: &Connection) {
         }
     }
 
-    let cli = Cli::parse();
-
-    let action = match &cli.command {
+    let action = match &command {
         Commands::Current {
             id: _,
             amount: _,
@@ -139,7 +140,7 @@ pub fn cli(db: &Connection) {
         _ => "",
     };
 
-    match &cli.command {
+    match &command {
         Commands::Current {
             id,
             amount,

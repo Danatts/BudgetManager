@@ -1,18 +1,17 @@
 use home;
 use rusqlite::Connection;
-use std::process;
+use std::{path::PathBuf, process};
 
-pub fn open_default_db() -> Connection {
-    let path = home::home_dir().map(|mut home| {
-        home.push("budget.test.db3");
-        home
-    });
-
+pub fn open_db(path: Option<PathBuf>) -> Connection {
     let path = match path {
         Some(path) => path,
         None => {
-            eprintln!("Unable to get home directory.");
-            process::exit(1);
+            if let Some(default_path) = get_default_db() {
+                default_path
+            } else {
+                eprintln!("Could not open database");
+                process::exit(1);
+            }
         }
     };
 
@@ -23,4 +22,11 @@ pub fn open_default_db() -> Connection {
             process::exit(1);
         }
     }
+}
+
+fn get_default_db() -> Option<PathBuf> {
+    home::home_dir().map(|mut home| {
+        home.push("budget.test.db3");
+        home
+    })
 }

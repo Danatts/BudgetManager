@@ -4,10 +4,12 @@ mod database;
 mod transaction;
 mod utils;
 
-use cli::cli;
-use database::open_default_db;
+use clap::Parser;
+use cli::{run, Cli};
+use database::open_db;
 
 fn main() {
-    let db = open_default_db();
-    cli(&db);
+    let Cli { command, database } = Cli::parse();
+    let db = open_db(database);
+    run(db, command);
 }
