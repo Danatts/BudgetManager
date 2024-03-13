@@ -1,6 +1,6 @@
 [package]
 name = "budget_manager"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 authors = ["Daniel Arteta"]
 description = "Interactive budget manager CLI application written in Rust🦀."
@@ -13,3 +13,7 @@ chrono = "0.4.35"
 clap = { version = "4.4.4", features = ["derive"] }
 home = "0.5.9"
 rusqlite = { version = "0.29.0", features = ["bundled", "chrono"] }
+
+[[bin]]
+name = "budget"
+path = "src/main.rs"

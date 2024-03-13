@@ -123,7 +123,7 @@ impl Command {
 pub struct Cli {
     #[command(subcommand)]
     pub command: Command,
-    #[arg(long, short)]
+    #[arg(long, short, value_name = "DB FILE NAME")]
     pub database: Option<PathBuf>,
 }
 
