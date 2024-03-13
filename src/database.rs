@@ -26,7 +26,7 @@ pub fn open_db(path: Option<PathBuf>) -> Connection {
 
 fn get_default_db() -> Option<PathBuf> {
     home::home_dir().map(|mut home| {
-        home.push("budget.test.db3");
+        home.push("budget.db3");
         home
     })
 }

@@ -13,7 +13,7 @@ use clap::{Parser, Subcommand};
 use rusqlite::Connection;
 
 #[derive(Subcommand)]
-pub enum Commands {
+pub enum Command {
     /// Set current budget funds
     Current {
         #[arg(value_name = "ID")]
@@ -85,17 +85,49 @@ pub enum Commands {
     },
 }
 
+impl Command {
+    fn value(&self) -> &str {
+        match self {
+            Self::Current {
+                id: _,
+                amount: _,
+                description: _,
+            } => "Set current funds",
+            Self::Increase {
+                id: _,
+                amount: _,
+                description: _,
+            } => "Increase funds",
+            Self::Initial {
+                id: _,
+                amount: _,
+                description: _,
+            } => "Set initial funds",
+            Self::Reduce {
+                id: _,
+                amount: _,
+                description: _,
+            } => "Reduce funds",
+            Self::Reset {
+                id: _,
+                description: _,
+            } => "Reset funds",
+            _ => "",
+        }
+    }
+}
+
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 #[command(propagate_version = true)]
 pub struct Cli {
     #[command(subcommand)]
-    pub command: Commands,
+    pub command: Command,
     #[arg(long, short)]
     pub database: Option<PathBuf>,
 }
 
-pub fn run(db: Connection, command: Commands) {
+pub fn run(db: Connection, command: Command) {
     match create_budget_table(&db) {
         Ok(_) => {}
         Err(error) => {
@@ -112,36 +144,8 @@ pub fn run(db: Connection, command: Commands) {
         }
     }
 
-    let action = match &command {
-        Commands::Current {
-            id: _,
-            amount: _,
-            description: _,
-        } => "Set current funds",
-        Commands::Increase {
-            id: _,
-            amount: _,
-            description: _,
-        } => "Increase funds",
-        Commands::Initial {
-            id: _,
-            amount: _,
-            description: _,
-        } => "Set initial funds",
-        Commands::Reduce {
-            id: _,
-            amount: _,
-            description: _,
-        } => "Reduce funds",
-        Commands::Reset {
-            id: _,
-            description: _,
-        } => "Reset funds",
-        _ => "",
-    };
-
     match &command {
-        Commands::Current {
+        Command::Current {
             id,
             amount,
             description,
@@ -150,7 +154,8 @@ pub fn run(db: Connection, command: Commands) {
                 budget.set_current_funds(amount);
                 match update_budget(&db, &budget) {
                     Ok(rows) => {
-                        let transaction = Transaction::new(id, action, amount, description);
+                        let transaction =
+                            Transaction::new(id, command.value(), amount, description);
                         let _ = insert_transaction(&db, &transaction);
                         println!("{} record updated.", rows);
                         print_budget(&budget);
@@ -160,11 +165,11 @@ pub fn run(db: Connection, command: Commands) {
             }
             Err(error) => eprintln!("Error: {}", error),
         },
-        Commands::Delete { id } => match delete_budget_by_id(&db, id) {
+        Command::Delete { id } => match delete_budget_by_id(&db, id) {
             Ok(rows) => println!("{} record deleted.", rows),
             Err(error) => eprintln!("Error: {}", error),
         },
-        Commands::History { id } => match id {
+        Command::History { id } => match id {
             Some(id) => match get_transactions_by_budget(&db, id) {
                 Ok(list) => print_transactions(&list),
                 Err(error) => eprintln!("Error: {}", error),
@@ -174,7 +179,7 @@ pub fn run(db: Connection, command: Commands) {
                 Err(error) => eprintln!("Error: {}", error),
             },
         },
-        Commands::Increase {
+        Command::Increase {
             id,
             amount,
             description,
@@ -183,7 +188,8 @@ pub fn run(db: Connection, command: Commands) {
                 budget.increase_funds(amount);
                 match update_budget(&db, &budget) {
                     Ok(rows) => {
-                        let transaction = Transaction::new(id, action, amount, description);
+                        let transaction =
+                            Transaction::new(id, command.value(), amount, description);
                         let _ = insert_transaction(&db, &transaction);
                         println!("{} record updated.", rows);
                         print_budget(&budget);
@@ -193,7 +199,7 @@ pub fn run(db: Connection, command: Commands) {
             }
             Err(error) => eprintln!("Error: {}", error),
         },
-        Commands::Initial {
+        Command::Initial {
             id,
             amount,
             description,
@@ -202,7 +208,8 @@ pub fn run(db: Connection, command: Commands) {
                 budget.set_initial_funds(amount);
                 match update_budget(&db, &budget) {
                     Ok(rows) => {
-                        let transaction = Transaction::new(id, action, amount, description);
+                        let transaction =
+                            Transaction::new(id, command.value(), amount, description);
                         let _ = insert_transaction(&db, &transaction);
                         println!("{} record updated.", rows);
                         print_budget(&budget);
@@ -212,11 +219,11 @@ pub fn run(db: Connection, command: Commands) {
             }
             Err(error) => eprintln!("Error: {}", error),
         },
-        Commands::List => match get_all_budgets(&db) {
+        Command::List => match get_all_budgets(&db) {
             Ok(budgets) => print_all_budgets(&budgets),
             Err(error) => eprintln!("Error: {}.", error),
         },
-        Commands::New { name, funds } => {
+        Command::New { name, funds } => {
             let budget = Budget::new(name, funds.to_owned());
             match insert_new_budget(&db, &budget) {
                 Ok(rows) => {
@@ -226,7 +233,7 @@ pub fn run(db: Connection, command: Commands) {
                 Err(error) => eprintln!("Error: {}", error),
             }
         }
-        Commands::Reduce {
+        Command::Reduce {
             id,
             amount,
             description,
@@ -235,7 +242,8 @@ pub fn run(db: Connection, command: Commands) {
                 budget.reduce_funds(amount);
                 match update_budget(&db, &budget) {
                     Ok(rows) => {
-                        let transaction = Transaction::new(id, action, amount, description);
+                        let transaction =
+                            Transaction::new(id, command.value(), amount, description);
                         let _ = insert_transaction(&db, &transaction);
                         println!("{} record updated.", rows);
                         print_budget(&budget);
@@ -245,7 +253,7 @@ pub fn run(db: Connection, command: Commands) {
             }
             Err(error) => eprintln!("Error: {}", error),
         },
-        Commands::Rename { id, name } => match get_budget_by_id(&db, id) {
+        Command::Rename { id, name } => match get_budget_by_id(&db, id) {
             Ok(mut budget) => {
                 budget.rename(name);
                 match update_budget(&db, &budget) {
@@ -258,13 +266,17 @@ pub fn run(db: Connection, command: Commands) {
             }
             Err(error) => eprintln!("Error: {}", error),
         },
-        Commands::Reset { id, description } => match get_budget_by_id(&db, id) {
+        Command::Reset { id, description } => match get_budget_by_id(&db, id) {
             Ok(mut budget) => {
                 budget.reset_funds();
                 match update_budget(&db, &budget) {
                     Ok(rows) => {
-                        let transaction =
-                            Transaction::new(id, action, &budget.initial_funds, description);
+                        let transaction = Transaction::new(
+                            id,
+                            command.value(),
+                            &budget.initial_funds,
+                            description,
+                        );
                         let _ = insert_transaction(&db, &transaction);
                         println!("{} record updated.", rows);
                         print_budget(&budget);
