@@ -20,6 +20,7 @@ pub enum Command {
         id: u32,
         #[arg(value_name = "AMOUNT")]
         amount: f64,
+        /// Add small description
         #[arg(long, short, value_name = "DESCRIPTION")]
         description: Option<String>,
     },
@@ -39,6 +40,7 @@ pub enum Command {
         id: u32,
         #[arg(value_name = "AMOUNT")]
         amount: f64,
+        /// Add small description
         #[arg(long, short, value_name = "DESCRIPTION")]
         description: Option<String>,
     },
@@ -48,6 +50,7 @@ pub enum Command {
         id: u32,
         #[arg(value_name = "AMOUNT")]
         amount: f64,
+        /// Add small description
         #[arg(long, short, value_name = "DESCRIPTION")]
         description: Option<String>,
     },
@@ -66,6 +69,7 @@ pub enum Command {
         id: u32,
         #[arg(value_name = "AMOUNT")]
         amount: f64,
+        /// Add small description
         #[arg(long, short, value_name = "DESCRIPTION")]
         description: Option<String>,
     },
@@ -80,6 +84,7 @@ pub enum Command {
     Reset {
         #[arg(value_name = "ID")]
         id: u32,
+        /// Add small description
         #[arg(long, short, value_name = "DESCRIPTION")]
         description: Option<String>,
     },
@@ -123,7 +128,8 @@ impl Command {
 pub struct Cli {
     #[command(subcommand)]
     pub command: Command,
-    #[arg(long, short, value_name = "DB FILE NAME")]
+    /// Select a database file
+    #[arg(long, short,value_name = "FILE NAME")]
     pub database: Option<PathBuf>,
 }
 
@@ -224,11 +230,10 @@ pub fn run(db: Connection, command: Command) {
             Err(error) => eprintln!("Error: {}.", error),
         },
         Command::New { name, funds } => {
-            let budget = Budget::new(name, funds.to_owned());
+            let budget = Budget::new(name, *funds);
             match insert_new_budget(&db, &budget) {
                 Ok(rows) => {
                     println!("{} record inserted.", rows);
-                    print_budget(&budget);
                 }
                 Err(error) => eprintln!("Error: {}", error),
             }
