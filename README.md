@@ -2,6 +2,8 @@
 
 Budget manager CLI application written in Rust🦀.
 
+![Screenshot01](./doc/img/ss01.png)
+
 ## BASIC USAGE
 
 Run `budget help` to check all available commands.
