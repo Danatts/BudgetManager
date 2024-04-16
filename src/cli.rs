@@ -131,20 +131,14 @@ pub struct Cli {
 }
 
 pub fn run(db: Connection, command: Command) {
-    match create_budget_table(&db) {
-        Ok(_) => {}
-        Err(error) => {
-            eprintln!("Error: {}.", error);
-            process::exit(1);
-        }
+    if let Err(error) = create_budget_table(&db) {
+        eprintln!("Error: {}.", error);
+        process::exit(1);
     }
 
-    match create_record_table(&db) {
-        Ok(_) => {}
-        Err(error) => {
-            eprintln!("Error: {}.", error);
-            process::exit(1);
-        }
+    if let Err(error) = create_record_table(&db) {
+        eprintln!("Error: {}.", error);
+        process::exit(1);
     }
 
     match &command {
