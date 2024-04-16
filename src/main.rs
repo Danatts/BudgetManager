@@ -1,8 +1,8 @@
 mod budget;
 mod cli;
 mod database;
+mod record;
 mod services;
-mod transaction;
 mod utils;
 
 use clap::Parser;

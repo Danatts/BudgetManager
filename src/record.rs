@@ -5,8 +5,8 @@ use std::fmt;
 use crate::utils::capitalize;
 use rusqlite::{Connection, Error};
 
-pub struct Transaction {
-    pub transaction_id: Option<u32>,
+pub struct Record {
+    pub record_id: Option<u32>,
     pub budget_id: u32,
     pub budget_name: Option<String>,
     pub action: String,
@@ -15,10 +15,10 @@ pub struct Transaction {
     pub created_at: DateTime<Local>,
 }
 
-impl Transaction {
-    pub fn new(budget_id: &u32, action: &str, amount: &f64, desc: &Option<String>) -> Transaction {
-        Transaction {
-            transaction_id: None,
+impl Record {
+    pub fn new(budget_id: &u32, action: &str, amount: &f64, desc: &Option<String>) -> Record {
+        Record {
+            record_id: None,
             budget_id: *budget_id,
             budget_name: None,
             action: capitalize(action),
@@ -29,7 +29,7 @@ impl Transaction {
     }
 }
 
-impl fmt::Display for Transaction {
+impl fmt::Display for Record {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let ac = Accounting::new_from_seperator("$", 2, ".", ",");
         let bud_name = match &self.budget_name {
@@ -53,20 +53,20 @@ impl fmt::Display for Transaction {
     }
 }
 
-pub fn print_transactions(transactions: &Vec<Transaction>) {
+pub fn print_records(records: &Vec<Record>) {
     println!(
         "\n {:<15}{:<20}{:<20}{:<25}{:<25}\n{:-^110}",
         "DATE", "BUDGET", "ACTION", "VALUE", "DESCRIPTION", ""
     );
-    for transaction in transactions {
-        println!("{transaction}")
+    for record in records {
+        println!("{record}")
     }
 }
 
-pub fn create_transaction_table(db: &Connection) -> Result<usize, Error> {
+pub fn create_record_table(db: &Connection) -> Result<usize, Error> {
     let query = "
-        CREATE TABLE IF NOT EXISTS transactions (
-            transaction_id INTEGER PRIMARY KEY,
+        CREATE TABLE IF NOT EXISTS records (
+            record_id INTEGER PRIMARY KEY,
             budget_id INTEGER NOT NULL,
             action TEXT NOT NULL,
             amount REAL NOT NULL,
@@ -76,38 +76,35 @@ pub fn create_transaction_table(db: &Connection) -> Result<usize, Error> {
         );";
     db.execute(query, ())
 }
-pub fn insert_transaction(db: &Connection, transaction: &Transaction) -> Result<usize, Error> {
+pub fn insert_record(db: &Connection, record: &Record) -> Result<usize, Error> {
     let query = "
-        INSERT INTO transactions (budget_id, action, amount, description, created_at)
+        INSERT INTO records (budget_id, action, amount, description, created_at)
         VALUES (?1, ?2, ?3, ?4, ?5);";
     db.execute(
         query,
         (
-            &transaction.budget_id,
-            &transaction.action,
-            &transaction.amount,
-            &transaction.desc,
-            &transaction.created_at,
+            &record.budget_id,
+            &record.action,
+            &record.amount,
+            &record.desc,
+            &record.created_at,
         ),
     )
 }
 
-pub fn get_transactions_by_budget(
-    db: &Connection,
-    budget_id: &u32,
-) -> Result<Vec<Transaction>, Error> {
+pub fn get_records_by_budget(db: &Connection, budget_id: &u32) -> Result<Vec<Record>, Error> {
     let query = "
-        SELECT t.transaction_id, b.budget_id, b.name, t.action, t.amount,  t.description, t.created_at
-        FROM transactions t
+        SELECT t.record_id, b.budget_id, b.name, t.action, t.amount,  t.description, t.created_at
+        FROM records t
         JOIN budgets b 
         ON t.budget_id = b.budget_id
         WHERE t.budget_id = ?1
         ORDER BY t.created_at DESC
         LIMIT 30;";
     let mut stmt = db.prepare(query)?;
-    let transaction_iter = stmt.query_map([budget_id], |row| {
-        Ok(Transaction {
-            transaction_id: row.get(0)?,
+    let record_iter = stmt.query_map([budget_id], |row| {
+        Ok(Record {
+            record_id: row.get(0)?,
             budget_id: row.get(1)?,
             budget_name: row.get(2)?,
             action: row.get(3)?,
@@ -116,25 +113,25 @@ pub fn get_transactions_by_budget(
             created_at: row.get(6)?,
         })
     })?;
-    let mut transaction_list = Vec::new();
-    for transaction in transaction_iter {
-        transaction_list.push(transaction?);
+    let mut records_list = Vec::new();
+    for record in record_iter {
+        records_list.push(record?);
     }
-    Ok(transaction_list)
+    Ok(records_list)
 }
 
-pub fn get_all_transactions(db: &Connection) -> Result<Vec<Transaction>, Error> {
+pub fn get_all_records(db: &Connection) -> Result<Vec<Record>, Error> {
     let query = "
-        SELECT t.transaction_id, b.budget_id, b.name, t.action, t.amount,  t.description, t.created_at
-        FROM transactions t
+        SELECT t.record_id, b.budget_id, b.name, t.action, t.amount,  t.description, t.created_at
+        FROM records t
         JOIN budgets b 
         ON t.budget_id = b.budget_id
         ORDER BY t.created_at DESC
         LIMIT 30;";
     let mut stmt = db.prepare(query)?;
-    let transaction_iter = stmt.query_map([], |row| {
-        Ok(Transaction {
-            transaction_id: row.get(0)?,
+    let record_iter = stmt.query_map([], |row| {
+        Ok(Record {
+            record_id: row.get(0)?,
             budget_id: row.get(1)?,
             budget_name: row.get(2)?,
             action: row.get(3)?,
@@ -143,9 +140,9 @@ pub fn get_all_transactions(db: &Connection) -> Result<Vec<Transaction>, Error> 
             created_at: row.get(6)?,
         })
     })?;
-    let mut transaction_list = Vec::new();
-    for transaction in transaction_iter {
-        transaction_list.push(transaction?);
+    let mut records_list = Vec::new();
+    for record in record_iter {
+        records_list.push(record?);
     }
-    Ok(transaction_list)
+    Ok(records_list)
 }

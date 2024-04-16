@@ -1,9 +1,9 @@
-use crate::budget::create_budget_table;
+use crate::budget::{create_budget_table, print_budgets};
 use crate::services::{
     create_budget, get_budgets, get_history, increase_funds, reduce_funds, remove_budget,
     rename_budget, reset_funds, set_current_funds, set_initial_funds,
 };
-use crate::transaction::create_transaction_table;
+use crate::record::{create_record_table, print_records};
 use clap::{Parser, Subcommand};
 use rusqlite::Connection;
 use std::path::PathBuf;
@@ -139,7 +139,7 @@ pub fn run(db: Connection, command: Command) {
         }
     }
 
-    match create_transaction_table(&db) {
+    match create_record_table(&db) {
         Ok(_) => {}
         Err(error) => {
             eprintln!("Error: {}.", error);
@@ -152,27 +152,57 @@ pub fn run(db: Connection, command: Command) {
             id,
             amount,
             description,
-        } => set_current_funds(&db, id, amount, &command, description),
-        Command::History { id } => get_history(&db, id),
+        } => match set_current_funds(&db, id, amount, &command, description) {
+            Ok(rows) => println!("{} record updates", rows),
+            Err(error) => eprintln!("Error: {}", error),
+        },
+        Command::History { id } => match get_history(&db, id) {
+            Ok(records) => print_records(&records),
+            Err(error) => eprintln!("Error: {}", error),
+        },
         Command::Increase {
             id,
             amount,
             description,
-        } => increase_funds(&db, id, amount, &command, description),
+        } => match increase_funds(&db, id, amount, &command, description) {
+            Ok(rows) => println!("{} record updates", rows),
+            Err(error) => eprintln!("Error: {}", error),
+        },
         Command::Initial {
             id,
             amount,
             description,
-        } => set_initial_funds(&db, id, amount, &command, description),
-        Command::List => get_budgets(&db),
-        Command::New { name, funds } => create_budget(&db, name, funds),
+        } => match set_initial_funds(&db, id, amount, &command, description) {
+            Ok(rows) => println!("{} record updates", rows),
+            Err(error) => eprintln!("Error: {}", error),
+        },
+        Command::List => match get_budgets(&db) {
+            Ok(budgets) => print_budgets(&budgets),
+            Err(error) => eprintln!("Error: {}", error),
+        },
+        Command::New { name, funds } => match create_budget(&db, name, funds) {
+            Ok(rows) => println!("{} record inserted.", rows),
+            Err(error) => eprintln!("Error: {}", error),
+        },
         Command::Reduce {
             id,
             amount,
             description,
-        } => reduce_funds(&db, id, amount, &command, description),
-        Command::Remove { id } => remove_budget(&db, id),
-        Command::Rename { id, name } => rename_budget(&db, id, name),
-        Command::Reset { id, description } => reset_funds(&db, id, &command, description),
+        } => match reduce_funds(&db, id, amount, &command, description) {
+            Ok(rows) => println!("{} record updates", rows),
+            Err(error) => eprintln!("Error: {}", error),
+        },
+        Command::Remove { id } => match remove_budget(&db, id) {
+            Ok(rows) => println!("{} record deleted.", rows),
+            Err(error) => eprintln!("Error: {}", error),
+        },
+        Command::Rename { id, name } => match rename_budget(&db, id, name) {
+            Ok(rows) => println!("{} record updated.", rows),
+            Err(error) => eprintln!("Error: {}", error),
+        },
+        Command::Reset { id, description } => match reset_funds(&db, id, &command, description) {
+            Ok(rows) => println!("{} record updated.", rows),
+            Err(error) => eprintln!("Error: {}", error),
+        },
     }
 }
