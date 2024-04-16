@@ -10,12 +10,12 @@ pub struct Budget {
 }
 
 impl Budget {
-    pub fn new(name: &str, funds: f64) -> Budget {
+    pub fn new(name: &str, funds: &f64) -> Budget {
         Budget {
             budget_id: None,
             name: capitalize(name),
-            initial_funds: funds,
-            current_funds: funds,
+            initial_funds: *funds,
+            current_funds: *funds,
         }
     }
 
@@ -72,7 +72,7 @@ pub fn create_budget_table(db: &Connection) -> Result<usize, Error> {
     db.execute(query, ())
 }
 
-pub fn insert_new_budget(db: &Connection, budget: &Budget) -> Result<usize, Error> {
+pub fn insert_budget(db: &Connection, budget: &Budget) -> Result<usize, Error> {
     let query = "
         INSERT INTO budgets (name, initial_funds, current_funds)
         VALUES (?1, ?2, ?3);";
@@ -82,7 +82,7 @@ pub fn insert_new_budget(db: &Connection, budget: &Budget) -> Result<usize, Erro
     )
 }
 
-pub fn get_budget_by_id(db: &Connection, id: &u32) -> Result<Vec<Budget>, Error> {
+pub fn select_budget_by_id(db: &Connection, id: &u32) -> Result<Vec<Budget>, Error> {
     let query = "
         SELECT *
         FROM budgets
@@ -99,7 +99,7 @@ pub fn get_budget_by_id(db: &Connection, id: &u32) -> Result<Vec<Budget>, Error>
     Ok(budgets)
 }
 
-pub fn get_all_budgets(db: &Connection) -> Result<Vec<Budget>, Error> {
+pub fn select_all_budgets(db: &Connection) -> Result<Vec<Budget>, Error> {
     let query = "
         SELECT *
         FROM budgets;";
@@ -150,35 +150,35 @@ mod tests {
 
     #[test]
     fn reduce_funds_ok() {
-        let mut budget = Budget::new("Test", 5000.0);
+        let mut budget = Budget::new("Test", &5000.0);
         budget.reduce_funds(&3000.0);
         assert_eq!(budget.current_funds, 2000.0);
     }
 
     #[test]
     fn reduce_funds_ko() {
-        let mut budget = Budget::new("Test", 5000.0);
+        let mut budget = Budget::new("Test", &5000.0);
         budget.reduce_funds(&3000.0);
         assert_ne!(budget.current_funds, 3000.0);
     }
 
     #[test]
     fn increase_funds_ok() {
-        let mut budget = Budget::new("Test", 5000.0);
+        let mut budget = Budget::new("Test", &5000.0);
         budget.increase_funds(&3000.0);
         assert_eq!(budget.current_funds, 8000.0);
     }
 
     #[test]
     fn increase_funds_ko() {
-        let mut budget = Budget::new("Test", 5000.0);
+        let mut budget = Budget::new("Test", &5000.0);
         budget.increase_funds(&3000.0);
         assert_ne!(budget.current_funds, 7000.0);
     }
 
     #[test]
     fn reset_funds_ok() {
-        let mut budget = Budget::new("Test", 5000.0);
+        let mut budget = Budget::new("Test", &5000.0);
         budget.increase_funds(&3000.0);
         budget.reset_funds();
         assert_eq!(budget.current_funds, budget.initial_funds);
@@ -186,7 +186,7 @@ mod tests {
 
     #[test]
     fn reset_funds_ko() {
-        let mut budget = Budget::new("Test", 5000.0);
+        let mut budget = Budget::new("Test", &5000.0);
         budget.increase_funds(&3000.0);
         budget.reset_funds();
         assert_ne!(budget.current_funds, 2000.0);
@@ -194,42 +194,42 @@ mod tests {
 
     #[test]
     fn set_funds_ok() {
-        let mut budget = Budget::new("Test", 5000.0);
+        let mut budget = Budget::new("Test", &5000.0);
         budget.set_current_funds(&3000.0);
         assert_eq!(budget.current_funds, 3000.0);
     }
 
     #[test]
     fn set_funds_ko() {
-        let mut budget = Budget::new("Test", 5000.0);
+        let mut budget = Budget::new("Test", &5000.0);
         budget.set_current_funds(&3000.0);
         assert_ne!(budget.current_funds, 5000.0);
     }
 
     #[test]
     fn set_initial_ok() {
-        let mut budget = Budget::new("Test", 5000.0);
+        let mut budget = Budget::new("Test", &5000.0);
         budget.set_initial_funds(&3000.0);
         assert_eq!(budget.initial_funds, 3000.0);
     }
 
     #[test]
     fn set_initial_ko() {
-        let mut budget = Budget::new("Test", 5000.0);
+        let mut budget = Budget::new("Test", &5000.0);
         budget.set_initial_funds(&3000.0);
         assert_ne!(budget.initial_funds, 5000.0);
     }
 
     #[test]
     fn rename_ok() {
-        let mut budget = Budget::new("Test", 5000.0);
+        let mut budget = Budget::new("Test", &5000.0);
         budget.rename("New name");
         assert_eq!(budget.name, "New name");
     }
 
     #[test]
     fn rename_ko() {
-        let mut budget = Budget::new("Test", 5000.0);
+        let mut budget = Budget::new("Test", &5000.0);
         budget.rename("New name");
         assert_ne!(budget.name, String::from("Test".to_string()));
     }

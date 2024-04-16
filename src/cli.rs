@@ -1,6 +1,6 @@
 use crate::budget::create_budget_table;
 use crate::services::{
-    create_budget, delete_budget, get_budgets, get_history, increase_funds, reduce_funds,
+    create_budget, get_budgets, get_history, increase_funds, reduce_funds, remove_budget,
     rename_budget, reset_funds, set_current_funds, set_initial_funds,
 };
 use crate::transaction::create_transaction_table;
@@ -20,11 +20,6 @@ pub enum Command {
         /// Add small description
         #[arg(long, short, value_name = "DESCRIPTION")]
         description: Option<String>,
-    },
-    /// Delete a budget
-    Delete {
-        #[arg(value_name = "ID")]
-        id: u32,
     },
     /// Print transaction history
     History {
@@ -69,6 +64,11 @@ pub enum Command {
         /// Add small description
         #[arg(long, short, value_name = "DESCRIPTION")]
         description: Option<String>,
+    },
+    /// Remove a budget
+    Remove {
+        #[arg(value_name = "ID")]
+        id: u32,
     },
     /// Rename a budget
     Rename {
@@ -153,7 +153,6 @@ pub fn run(db: Connection, command: Command) {
             amount,
             description,
         } => set_current_funds(&db, id, amount, &command, description),
-        Command::Delete { id } => delete_budget(&db, id),
         Command::History { id } => get_history(&db, id),
         Command::Increase {
             id,
@@ -172,6 +171,7 @@ pub fn run(db: Connection, command: Command) {
             amount,
             description,
         } => reduce_funds(&db, id, amount, &command, description),
+        Command::Remove { id } => remove_budget(&db, id),
         Command::Rename { id, name } => rename_budget(&db, id, name),
         Command::Reset { id, description } => reset_funds(&db, id, &command, description),
     }

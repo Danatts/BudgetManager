@@ -1,5 +1,5 @@
 use crate::budget::{
-    delete_budget_by_id, get_all_budgets, get_budget_by_id, insert_new_budget, print_budgets,
+    delete_budget_by_id, select_all_budgets, select_budget_by_id, insert_budget, print_budgets,
     update_budget, Budget,
 };
 use crate::cli::Command;
@@ -10,8 +10,8 @@ use crate::transaction::{
 use rusqlite::Connection;
 
 pub fn create_budget(db: &Connection, name: &str, funds: &f64) {
-    let budget = Budget::new(name, *funds);
-    match insert_new_budget(db, &budget) {
+    let budget = Budget::new(name, funds);
+    match insert_budget(db, &budget) {
         Ok(rows) => {
             println!("{} record inserted.", rows);
         }
@@ -19,7 +19,7 @@ pub fn create_budget(db: &Connection, name: &str, funds: &f64) {
     }
 }
 
-pub fn delete_budget(db: &Connection, id: &u32) {
+pub fn remove_budget(db: &Connection, id: &u32) {
     match delete_budget_by_id(db, id) {
         Ok(rows) => println!("{} record deleted.", rows),
         Err(error) => eprintln!("Error: {}", error),
@@ -27,7 +27,7 @@ pub fn delete_budget(db: &Connection, id: &u32) {
 }
 
 pub fn rename_budget(db: &Connection, id: &u32, name: &str) {
-    match get_budget_by_id(db, id) {
+    match select_budget_by_id(db, id) {
         Ok(mut budgets) => {
             let budget = &mut budgets[0];
             budget.rename(name);
@@ -50,7 +50,7 @@ pub fn increase_funds(
     command: &Command,
     description: &Option<String>,
 ) {
-    match get_budget_by_id(db, id) {
+    match select_budget_by_id(db, id) {
         Ok(mut budgets) => {
             let budget = &mut budgets[0];
             budget.increase_funds(amount);
@@ -75,7 +75,7 @@ pub fn reduce_funds(
     command: &Command,
     description: &Option<String>,
 ) {
-    match get_budget_by_id(db, id) {
+    match select_budget_by_id(db, id) {
         Ok(mut budgets) => {
             let budget = &mut budgets[0];
             budget.reduce_funds(amount);
@@ -94,7 +94,7 @@ pub fn reduce_funds(
 }
 
 pub fn reset_funds(db: &Connection, id: &u32, command: &Command, description: &Option<String>) {
-    match get_budget_by_id(db, id) {
+    match select_budget_by_id(db, id) {
         Ok(mut budgets) => {
             let budget = &mut budgets[0];
             budget.reset_funds();
@@ -120,7 +120,7 @@ pub fn set_current_funds(
     command: &Command,
     description: &Option<String>,
 ) {
-    match get_budget_by_id(db, id) {
+    match select_budget_by_id(db, id) {
         Ok(mut budgets) => {
             let budget = &mut budgets[0];
             budget.set_current_funds(amount);
@@ -145,7 +145,7 @@ pub fn set_initial_funds(
     command: &Command,
     description: &Option<String>,
 ) {
-    match get_budget_by_id(db, id) {
+    match select_budget_by_id(db, id) {
         Ok(mut budgets) => {
             let budget = &mut budgets[0];
             budget.set_initial_funds(amount);
@@ -164,7 +164,7 @@ pub fn set_initial_funds(
 }
 
 pub fn get_budgets(db: &Connection) {
-    match get_all_budgets(db) {
+    match select_all_budgets(db) {
         Ok(budgets) => print_budgets(&budgets),
         Err(error) => eprintln!("Error: {}.", error),
     }
