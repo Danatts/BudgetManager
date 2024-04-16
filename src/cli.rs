@@ -1,16 +1,13 @@
-use std::path::PathBuf;
-use std::process;
-
-use crate::budget::{
-    create_budget_table, delete_budget_by_id, get_all_budgets, get_budget_by_id, insert_new_budget,
-    print_budgets, update_budget, Budget,
+use crate::budget::create_budget_table;
+use crate::services::{
+    create_budget, delete_budget, get_budgets, get_history, increase_funds, reduce_funds,
+    rename_budget, reset_funds, set_current_funds, set_initial_funds,
 };
-use crate::transaction::{
-    create_transaction_table, get_all_transactions, get_transactions_by_budget, insert_transaction,
-    print_transactions, Transaction,
-};
+use crate::transaction::create_transaction_table;
 use clap::{Parser, Subcommand};
 use rusqlite::Connection;
+use std::path::PathBuf;
+use std::process;
 
 #[derive(Subcommand)]
 pub enum Command {
@@ -91,7 +88,7 @@ pub enum Command {
 }
 
 impl Command {
-    fn value(&self) -> &str {
+    pub fn value(&self) -> &str {
         match self {
             Self::Current {
                 id: _,
@@ -155,147 +152,27 @@ pub fn run(db: Connection, command: Command) {
             id,
             amount,
             description,
-        } => match get_budget_by_id(&db, id) {
-            Ok(mut budgets) => {
-                let budget = &mut budgets[0];
-                budget.set_current_funds(amount);
-                match update_budget(&db, budget) {
-                    Ok(rows) => {
-                        let transaction =
-                            Transaction::new(id, command.value(), amount, description);
-                        let _ = insert_transaction(&db, &transaction);
-                        println!("{} record updated.", rows);
-                        print_budgets(&budgets);
-                    }
-                    Err(error) => eprintln!("Error: {}", error),
-                }
-            }
-            Err(error) => eprintln!("Error: {}", error),
-        },
-        Command::Delete { id } => match delete_budget_by_id(&db, id) {
-            Ok(rows) => println!("{} record deleted.", rows),
-            Err(error) => eprintln!("Error: {}", error),
-        },
-        Command::History { id } => match id {
-            Some(id) => match get_transactions_by_budget(&db, id) {
-                Ok(list) => print_transactions(&list),
-                Err(error) => eprintln!("Error: {}", error),
-            },
-            None => match get_all_transactions(&db) {
-                Ok(list) => print_transactions(&list),
-                Err(error) => eprintln!("Error: {}", error),
-            },
-        },
+        } => set_current_funds(&db, id, amount, &command, description),
+        Command::Delete { id } => delete_budget(&db, id),
+        Command::History { id } => get_history(&db, id),
         Command::Increase {
             id,
             amount,
             description,
-        } => match get_budget_by_id(&db, id) {
-            Ok(mut budgets) => {
-                let budget = &mut budgets[0];
-                budget.increase_funds(amount);
-                match update_budget(&db, budget) {
-                    Ok(rows) => {
-                        let transaction =
-                            Transaction::new(id, command.value(), amount, description);
-                        let _ = insert_transaction(&db, &transaction);
-                        println!("{} record updated.", rows);
-                        print_budgets(&budgets);
-                    }
-                    Err(error) => eprintln!("Error: {}", error),
-                }
-            }
-            Err(error) => eprintln!("Error: {}", error),
-        },
+        } => increase_funds(&db, id, amount, &command, description),
         Command::Initial {
             id,
             amount,
             description,
-        } => match get_budget_by_id(&db, id) {
-            Ok(mut budgets) => {
-                let budget = &mut budgets[0];
-                budget.set_initial_funds(amount);
-                match update_budget(&db, budget) {
-                    Ok(rows) => {
-                        let transaction =
-                            Transaction::new(id, command.value(), amount, description);
-                        let _ = insert_transaction(&db, &transaction);
-                        println!("{} record updated.", rows);
-                        print_budgets(&budgets);
-                    }
-                    Err(error) => eprintln!("Error: {}", error),
-                }
-            }
-            Err(error) => eprintln!("Error: {}", error),
-        },
-        Command::List => match get_all_budgets(&db) {
-            Ok(budgets) => print_budgets(&budgets),
-            Err(error) => eprintln!("Error: {}.", error),
-        },
-        Command::New { name, funds } => {
-            let budget = Budget::new(name, *funds);
-            match insert_new_budget(&db, &budget) {
-                Ok(rows) => {
-                    println!("{} record inserted.", rows);
-                }
-                Err(error) => eprintln!("Error: {}", error),
-            }
-        }
+        } => set_initial_funds(&db, id, amount, &command, description),
+        Command::List => get_budgets(&db),
+        Command::New { name, funds } => create_budget(&db, name, funds),
         Command::Reduce {
             id,
             amount,
             description,
-        } => match get_budget_by_id(&db, id) {
-            Ok(mut budgets) => {
-                let budget = &mut budgets[0];
-                budget.reduce_funds(amount);
-                match update_budget(&db, budget) {
-                    Ok(rows) => {
-                        let transaction =
-                            Transaction::new(id, command.value(), amount, description);
-                        let _ = insert_transaction(&db, &transaction);
-                        println!("{} record updated.", rows);
-                        print_budgets(&budgets);
-                    }
-                    Err(error) => eprintln!("Error: {}", error),
-                }
-            }
-            Err(error) => eprintln!("Error: {}", error),
-        },
-        Command::Rename { id, name } => match get_budget_by_id(&db, id) {
-            Ok(mut budgets) => {
-                let budget = &mut budgets[0];
-                budget.rename(name);
-                match update_budget(&db, budget) {
-                    Ok(rows) => {
-                        println!("{} record updated.", rows);
-                        print_budgets(&budgets);
-                    }
-                    Err(error) => eprintln!("Error: {}", error),
-                }
-            }
-            Err(error) => eprintln!("Error: {}", error),
-        },
-        Command::Reset { id, description } => match get_budget_by_id(&db, id) {
-            Ok(mut budgets) => {
-                let budget = &mut budgets[0];
-                budget.reset_funds();
-                match update_budget(&db, budget) {
-                    Ok(rows) => {
-                        let transaction = Transaction::new(
-                            id,
-                            command.value(),
-                            &budget.initial_funds,
-                            description,
-                        );
-                        let _ = insert_transaction(&db, &transaction);
-                        println!("{} record updated.", rows);
-                        print_budgets(&budgets);
-                    }
-                    Err(error) => eprintln!("Error: {}", error),
-                }
-            }
-            Err(error) => eprintln!("Error: {}", error),
-        },
+        } => reduce_funds(&db, id, amount, &command, description),
+        Command::Rename { id, name } => rename_budget(&db, id, name),
+        Command::Reset { id, description } => reset_funds(&db, id, &command, description),
     }
 }

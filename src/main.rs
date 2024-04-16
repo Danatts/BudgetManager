@@ -1,6 +1,7 @@
 mod budget;
 mod cli;
 mod database;
+mod services;
 mod transaction;
 mod utils;
 
