@@ -1,7 +1,6 @@
 use crate::utils::capitalize;
 use accounting::Accounting;
 use rusqlite::{Connection, Error};
-use std::fmt;
 
 pub struct Budget {
     pub budget_id: Option<u32>,
@@ -14,7 +13,7 @@ impl Budget {
     pub fn new(name: &str, funds: f64) -> Budget {
         Budget {
             budget_id: None,
-            name: capitalize(&name),
+            name: capitalize(name),
             initial_funds: funds,
             current_funds: funds,
         }
@@ -45,34 +44,20 @@ impl Budget {
     }
 }
 
-impl fmt::Display for Budget {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let ac = Accounting::new_from_seperator("$", 2, ".", ",");
-        write!(
-            f,
-            " {:<5}{:<20}{:>25}{:>25}",
-            self.budget_id.unwrap(),
-            self.name,
-            ac.format_money(self.current_funds),
-            ac.format_money(self.initial_funds)
-        )
-    }
-}
-
-pub fn print_budget(budget: &Budget) {
+pub fn print_budgets(budgets: &Vec<Budget>) {
+    let ac = Accounting::new_from_seperator("$", 2, ".", ",");
     println!(
-        "\n {:<5}{:<20}{:>25}{:>25}\n{:-^80}\n{budget}",
-        "ID", "BUDGET", "CURRENT FUNDS", "INITIAL FUNDS", ""
-    );
-}
-
-pub fn print_all_budgets(budgets: &Vec<Budget>) {
-    println!(
-        "\n {:<5}{:<20}{:>25}{:>25}\n{:-^80}",
+        "\n{:<5}{:<20}{:>25}{:>25}\n{:-^80}",
         "ID", "BUDGET", "CURRENT FUNDS", "INITIAL FUNDS", ""
     );
     for budget in budgets {
-        println!("{budget}")
+        println!(
+            "{:<5}{:<20}{:>25}{:>25}",
+            budget.budget_id.unwrap(),
+            budget.name,
+            ac.format_money(budget.current_funds),
+            ac.format_money(budget.initial_funds)
+        )
     }
 }
 
@@ -97,19 +82,21 @@ pub fn insert_new_budget(db: &Connection, budget: &Budget) -> Result<usize, Erro
     )
 }
 
-pub fn get_budget_by_id(db: &Connection, id: &u32) -> Result<Budget, Error> {
+pub fn get_budget_by_id(db: &Connection, id: &u32) -> Result<Vec<Budget>, Error> {
     let query = "
         SELECT *
         FROM budgets
         WHERE budget_id = ?1;";
-    db.query_row(query, [id], |row| {
+    let budget = db.query_row(query, [id], |row| {
         Ok(Budget {
             budget_id: row.get(0)?,
             name: row.get(1)?,
             initial_funds: row.get(2)?,
             current_funds: row.get(3)?,
         })
-    })
+    })?;
+    let budgets = vec![budget];
+    Ok(budgets)
 }
 
 pub fn get_all_budgets(db: &Connection) -> Result<Vec<Budget>, Error> {
@@ -125,11 +112,11 @@ pub fn get_all_budgets(db: &Connection) -> Result<Vec<Budget>, Error> {
             current_funds: row.get(3)?,
         })
     })?;
-    let mut budget_list = Vec::new();
+    let mut budgets = Vec::new();
     for budget in budget_iter {
-        budget_list.push(budget?);
+        budgets.push(budget?);
     }
-    Ok(budget_list)
+    Ok(budgets)
 }
 
 pub fn update_budget(db: &Connection, budget: &Budget) -> Result<usize, Error> {
@@ -217,6 +204,20 @@ mod tests {
         let mut budget = Budget::new("Test", 5000.0);
         budget.set_current_funds(&3000.0);
         assert_ne!(budget.current_funds, 5000.0);
+    }
+
+    #[test]
+    fn set_initial_ok() {
+        let mut budget = Budget::new("Test", 5000.0);
+        budget.set_initial_funds(&3000.0);
+        assert_eq!(budget.initial_funds, 3000.0);
+    }
+
+    #[test]
+    fn set_initial_ko() {
+        let mut budget = Budget::new("Test", 5000.0);
+        budget.set_initial_funds(&3000.0);
+        assert_ne!(budget.initial_funds, 5000.0);
     }
 
     #[test]

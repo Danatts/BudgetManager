@@ -1,4 +1,3 @@
-use home;
 use rusqlite::Connection;
 use std::{path::PathBuf, process};
 
