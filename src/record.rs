@@ -1,8 +1,6 @@
+use crate::utils::capitalize;
 use accounting::Accounting;
 use chrono::{DateTime, Local};
-use std::fmt;
-
-use crate::utils::capitalize;
 use rusqlite::{Connection, Error};
 
 pub struct Record {
@@ -29,37 +27,30 @@ impl Record {
     }
 }
 
-impl fmt::Display for Record {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let ac = Accounting::new_from_seperator("$", 2, ".", ",");
-        let bud_name = match &self.budget_name {
-            Some(text) => text.to_owned(),
-            None => String::new(),
-        };
-        let desc = match &self.desc {
-            Some(text) => text.to_owned(),
-            None => String::new(),
-        };
-        let date = self.created_at.format("%d-%m-%Y");
-        write!(
-            f,
-            " {:<15}{:<20}{:<20}{:<25}{:<25}",
-            date,
-            bud_name,
-            self.action,
-            ac.format_money(self.amount),
-            desc,
-        )
-    }
-}
-
 pub fn print_records(records: &Vec<Record>) {
+    let ac = Accounting::new_from_seperator("$", 2, ".", ",");
     println!(
-        "\n {:<15}{:<20}{:<20}{:<25}{:<25}\n{:-^110}",
+        "\n{:<15}{:<20}{:<20}{:<25}{:<25}\n{:-^110}",
         "DATE", "BUDGET", "ACTION", "VALUE", "DESCRIPTION", ""
     );
     for record in records {
-        println!("{record}")
+        let bud_name = match &record.budget_name {
+            Some(text) => text.to_owned(),
+            None => String::new(),
+        };
+        let desc = match &record.desc {
+            Some(text) => text.to_owned(),
+            None => String::new(),
+        };
+        let date = record.created_at.format("%d-%m-%Y");
+        println!(
+            "{:<15}{:<20}{:<20}{:<25}{:<25}",
+            date,
+            bud_name,
+            record.action,
+            ac.format_money(record.amount),
+            desc,
+        )
     }
 }
 

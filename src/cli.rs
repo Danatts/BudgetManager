@@ -1,9 +1,9 @@
 use crate::budget::{create_budget_table, print_budgets};
+use crate::record::{create_record_table, print_records};
 use crate::services::{
     create_budget, get_budgets, get_history, increase_funds, reduce_funds, remove_budget,
     rename_budget, reset_funds, set_current_funds, set_initial_funds,
 };
-use crate::record::{create_record_table, print_records};
 use clap::{Parser, Subcommand};
 use rusqlite::Connection;
 use std::path::PathBuf;
