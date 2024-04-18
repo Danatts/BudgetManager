@@ -4,18 +4,18 @@ use crate::budget::{
 };
 use crate::cli::Command;
 use crate::record::{get_all_records, get_records_by_budget, insert_record, Record};
-use rusqlite::{Connection, Error};
+use rusqlite::Connection;
 
-pub fn create_budget(db: &Connection, name: &str, funds: &f64) -> Result<usize, Error> {
+pub fn create_budget(db: &Connection, name: &str, funds: &f64) -> Result<usize, rusqlite::Error> {
     let budget = Budget::new(name, funds);
     insert_budget(db, &budget)
 }
 
-pub fn remove_budget(db: &Connection, id: &u32) -> Result<usize, Error> {
+pub fn remove_budget(db: &Connection, id: &u32) -> Result<usize, rusqlite::Error> {
     delete_budget_by_id(db, id)
 }
 
-pub fn rename_budget(db: &Connection, id: &u32, name: &str) -> Result<usize, Error> {
+pub fn rename_budget(db: &Connection, id: &u32, name: &str) -> Result<usize, rusqlite::Error> {
     let mut budgets = select_budget_by_id(db, id)?;
     let budget = &mut budgets[0];
     budget.rename(name);
@@ -28,7 +28,7 @@ pub fn increase_funds(
     amount: &f64,
     command: &Command,
     description: &Option<String>,
-) -> Result<usize, Error> {
+) -> Result<usize, rusqlite::Error> {
     let mut budgets = select_budget_by_id(db, id)?;
     let budget = &mut budgets[0];
     budget.increase_funds(amount);
@@ -44,7 +44,7 @@ pub fn reduce_funds(
     amount: &f64,
     command: &Command,
     description: &Option<String>,
-) -> Result<usize, Error> {
+) -> Result<usize, rusqlite::Error> {
     let mut budgets = select_budget_by_id(db, id)?;
     let budget = &mut budgets[0];
     budget.reduce_funds(amount);
@@ -59,7 +59,7 @@ pub fn reset_funds(
     id: &u32,
     command: &Command,
     description: &Option<String>,
-) -> Result<usize, Error> {
+) -> Result<usize, rusqlite::Error> {
     let mut budgets = select_budget_by_id(db, id)?;
     let budget = &mut budgets[0];
     budget.reset_funds();
@@ -75,7 +75,7 @@ pub fn set_current_funds(
     amount: &f64,
     command: &Command,
     description: &Option<String>,
-) -> Result<usize, Error> {
+) -> Result<usize, rusqlite::Error> {
     let mut budgets = select_budget_by_id(db, id)?;
     let budget = &mut budgets[0];
     budget.set_current_funds(amount);
@@ -91,7 +91,7 @@ pub fn set_initial_funds(
     amount: &f64,
     command: &Command,
     description: &Option<String>,
-) -> Result<usize, Error> {
+) -> Result<usize, rusqlite::Error> {
     let mut budgets = select_budget_by_id(db, id)?;
     let budget = &mut budgets[0];
     budget.set_initial_funds(amount);
@@ -101,11 +101,11 @@ pub fn set_initial_funds(
     Ok(rows)
 }
 
-pub fn get_budgets(db: &Connection) -> Result<Vec<Budget>, Error> {
+pub fn get_budgets(db: &Connection) -> Result<Vec<Budget>, rusqlite::Error> {
     select_all_budgets(db)
 }
 
-pub fn get_history(db: &Connection, id: &Option<u32>) -> Result<Vec<Record>, Error> {
+pub fn get_history(db: &Connection, id: &Option<u32>) -> Result<Vec<Record>, rusqlite::Error> {
     match id {
         Some(id) => get_records_by_budget(db, id),
         None => get_all_records(db),

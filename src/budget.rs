@@ -1,6 +1,6 @@
-use crate::utils::capitalize;
+use crate::utils;
 use accounting::Accounting;
-use rusqlite::{Connection, Error};
+use rusqlite::Connection;
 
 pub struct Budget {
     pub budget_id: Option<u32>,
@@ -13,7 +13,7 @@ impl Budget {
     pub fn new(name: &str, funds: &f64) -> Budget {
         Budget {
             budget_id: None,
-            name: capitalize(name),
+            name: utils::capitalize(name),
             initial_funds: *funds,
             current_funds: *funds,
         }
@@ -40,7 +40,7 @@ impl Budget {
     }
 
     pub fn rename(&mut self, new_name: &str) {
-        self.name = capitalize(new_name);
+        self.name = utils::capitalize(new_name);
     }
 }
 
@@ -61,7 +61,7 @@ pub fn print_budgets(budgets: &Vec<Budget>) {
     }
 }
 
-pub fn create_budget_table(db: &Connection) -> Result<usize, Error> {
+pub fn create_budget_table(db: &Connection) -> Result<usize, rusqlite::Error> {
     let query = "
         CREATE TABLE IF NOT EXISTS budgets (
             budget_id INTEGER PRIMARY KEY,
@@ -72,7 +72,7 @@ pub fn create_budget_table(db: &Connection) -> Result<usize, Error> {
     db.execute(query, ())
 }
 
-pub fn insert_budget(db: &Connection, budget: &Budget) -> Result<usize, Error> {
+pub fn insert_budget(db: &Connection, budget: &Budget) -> Result<usize, rusqlite::Error> {
     let query = "
         INSERT INTO budgets (name, initial_funds, current_funds)
         VALUES (?1, ?2, ?3);";
@@ -82,7 +82,7 @@ pub fn insert_budget(db: &Connection, budget: &Budget) -> Result<usize, Error> {
     )
 }
 
-pub fn select_budget_by_id(db: &Connection, id: &u32) -> Result<Vec<Budget>, Error> {
+pub fn select_budget_by_id(db: &Connection, id: &u32) -> Result<Vec<Budget>, rusqlite::Error> {
     let query = "
         SELECT *
         FROM budgets
@@ -99,7 +99,7 @@ pub fn select_budget_by_id(db: &Connection, id: &u32) -> Result<Vec<Budget>, Err
     Ok(budgets)
 }
 
-pub fn select_all_budgets(db: &Connection) -> Result<Vec<Budget>, Error> {
+pub fn select_all_budgets(db: &Connection) -> Result<Vec<Budget>, rusqlite::Error> {
     let query = "
         SELECT *
         FROM budgets;";
@@ -119,7 +119,7 @@ pub fn select_all_budgets(db: &Connection) -> Result<Vec<Budget>, Error> {
     Ok(budgets)
 }
 
-pub fn update_budget(db: &Connection, budget: &Budget) -> Result<usize, Error> {
+pub fn update_budget(db: &Connection, budget: &Budget) -> Result<usize, rusqlite::Error> {
     let query = "
         UPDATE budgets
         SET name = ?1,
@@ -137,7 +137,7 @@ pub fn update_budget(db: &Connection, budget: &Budget) -> Result<usize, Error> {
     )
 }
 
-pub fn delete_budget_by_id(db: &Connection, id: &u32) -> Result<usize, Error> {
+pub fn delete_budget_by_id(db: &Connection, id: &u32) -> Result<usize, rusqlite::Error> {
     let query = "
         DELETE FROM budgets
         WHERE budget_id = ?1;";

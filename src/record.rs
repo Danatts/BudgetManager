@@ -1,7 +1,7 @@
-use crate::utils::capitalize;
+use crate::utils;
 use accounting::Accounting;
 use chrono::{DateTime, Local};
-use rusqlite::{Connection, Error};
+use rusqlite::Connection;
 
 pub struct Record {
     pub record_id: Option<u32>,
@@ -19,7 +19,7 @@ impl Record {
             record_id: None,
             budget_id: *budget_id,
             budget_name: None,
-            action: capitalize(action),
+            action: utils::capitalize(action),
             amount: *amount,
             desc: desc.to_owned(),
             created_at: Local::now(),
@@ -54,7 +54,7 @@ pub fn print_records(records: &Vec<Record>) {
     }
 }
 
-pub fn create_record_table(db: &Connection) -> Result<usize, Error> {
+pub fn create_record_table(db: &Connection) -> Result<usize, rusqlite::Error> {
     let query = "
         CREATE TABLE IF NOT EXISTS records (
             record_id INTEGER PRIMARY KEY,
@@ -67,7 +67,7 @@ pub fn create_record_table(db: &Connection) -> Result<usize, Error> {
         );";
     db.execute(query, ())
 }
-pub fn insert_record(db: &Connection, record: &Record) -> Result<usize, Error> {
+pub fn insert_record(db: &Connection, record: &Record) -> Result<usize, rusqlite::Error> {
     let query = "
         INSERT INTO records (budget_id, action, amount, description, created_at)
         VALUES (?1, ?2, ?3, ?4, ?5);";
@@ -83,7 +83,10 @@ pub fn insert_record(db: &Connection, record: &Record) -> Result<usize, Error> {
     )
 }
 
-pub fn get_records_by_budget(db: &Connection, budget_id: &u32) -> Result<Vec<Record>, Error> {
+pub fn get_records_by_budget(
+    db: &Connection,
+    budget_id: &u32,
+) -> Result<Vec<Record>, rusqlite::Error> {
     let query = "
         SELECT t.record_id, b.budget_id, b.name, t.action, t.amount,  t.description, t.created_at
         FROM records t
@@ -111,7 +114,7 @@ pub fn get_records_by_budget(db: &Connection, budget_id: &u32) -> Result<Vec<Rec
     Ok(records_list)
 }
 
-pub fn get_all_records(db: &Connection) -> Result<Vec<Record>, Error> {
+pub fn get_all_records(db: &Connection) -> Result<Vec<Record>, rusqlite::Error> {
     let query = "
         SELECT t.record_id, b.budget_id, b.name, t.action, t.amount,  t.description, t.created_at
         FROM records t
