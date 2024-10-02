@@ -19,24 +19,24 @@ impl Budget {
         }
     }
 
-    pub fn increase_funds(&mut self, amount_to_increase: &f64) {
-        self.current_funds += amount_to_increase;
+    pub fn increase_funds(&mut self, amount: &f64) {
+        self.current_funds += amount;
     }
 
-    pub fn reduce_funds(&mut self, amount_to_reduce: &f64) {
-        self.current_funds -= amount_to_reduce;
+    pub fn reduce_funds(&mut self, amount: &f64) {
+        self.current_funds -= amount;
     }
 
     pub fn reset_funds(&mut self) {
         self.current_funds = self.initial_funds;
     }
 
-    pub fn set_current_funds(&mut self, amount_to_set: &f64) {
-        self.current_funds = *amount_to_set;
+    pub fn set_current_funds(&mut self, amount: &f64) {
+        self.current_funds = *amount;
     }
 
-    pub fn set_initial_funds(&mut self, amount_to_set: &f64) {
-        self.initial_funds = *amount_to_set;
+    pub fn set_initial_funds(&mut self, amount: &f64) {
+        self.initial_funds = *amount;
     }
 
     pub fn rename(&mut self, new_name: &str) {
