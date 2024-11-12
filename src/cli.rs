@@ -1,5 +1,7 @@
-use crate::budget::{create_budget_table, print_budgets};
-use crate::record::{create_record_table, print_records};
+use crate::action::create_action_table;
+use crate::budget::{create_budget_table, list_budgets};
+use crate::history::print_history;
+use crate::record::create_record_table;
 use crate::services::{
     create_budget, get_budgets, get_history, increase_funds, reduce_funds, remove_budget,
     rename_budget, reset_funds, set_current_funds, set_initial_funds,
@@ -141,6 +143,11 @@ pub fn run(db: Connection, command: Command) {
         process::exit(1);
     }
 
+    if let Err(error) = create_action_table(&db) {
+        eprintln!("Error: {}.", error);
+        process::exit(1);
+    }
+
     match &command {
         Command::Current {
             id,
@@ -151,7 +158,7 @@ pub fn run(db: Connection, command: Command) {
             Err(error) => eprintln!("Error: {}", error),
         },
         Command::History { id } => match get_history(&db, id) {
-            Ok(records) => print_records(&records),
+            Ok(records) => print_history(&records),
             Err(error) => eprintln!("Error: {}", error),
         },
         Command::Increase {
@@ -171,7 +178,7 @@ pub fn run(db: Connection, command: Command) {
             Err(error) => eprintln!("Error: {}", error),
         },
         Command::List => match get_budgets(&db) {
-            Ok(budgets) => print_budgets(&budgets),
+            Ok(budgets) => list_budgets(&budgets),
             Err(error) => eprintln!("Error: {}", error),
         },
         Command::New { name, funds } => match create_budget(&db, name, funds) {

@@ -1,6 +1,7 @@
 use crate::utils;
 use accounting::Accounting;
 use rusqlite::Connection;
+use std::fmt;
 
 pub struct Budget {
     pub budget_id: Option<u32>,
@@ -10,8 +11,8 @@ pub struct Budget {
 }
 
 impl Budget {
-    pub fn new(name: &str, funds: &f64) -> Budget {
-        Budget {
+    pub fn new(name: &str, funds: &f64) -> Self {
+        Self {
             budget_id: None,
             name: utils::capitalize(name),
             initial_funds: *funds,
@@ -44,20 +45,28 @@ impl Budget {
     }
 }
 
-pub fn print_budgets(budgets: &Vec<Budget>) {
-    let ac = Accounting::new_from_seperator("$", 2, ".", ",");
+impl fmt::Display for Budget {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let ac = Accounting::new_from_seperator("$", 2, ".", ",");
+        write!(
+            f,
+            "{:<5}{:<20}{:>25}{:>25}",
+            self.budget_id.unwrap(),
+            self.name,
+            ac.format_money(self.current_funds),
+            ac.format_money(self.initial_funds)
+        )
+    }
+}
+
+pub fn list_budgets(budgets: &Vec<Budget>) {
     println!(
         "\n{:<5}{:<20}{:>25}{:>25}\n{:-^80}",
         "ID", "BUDGET", "CURRENT FUNDS", "INITIAL FUNDS", ""
     );
+
     for budget in budgets {
-        println!(
-            "{:<5}{:<20}{:>25}{:>25}",
-            budget.budget_id.unwrap(),
-            budget.name,
-            ac.format_money(budget.current_funds),
-            ac.format_money(budget.initial_funds)
-        )
+        println!("{budget}")
     }
 }
 
