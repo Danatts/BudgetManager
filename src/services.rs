@@ -1,4 +1,4 @@
-use crate::action::{insert_action, Action};
+use crate::action::Action;
 use crate::budget::{
     delete_budget_by_id, insert_budget, select_all_budgets, select_budget_by_id, update_budget,
     Budget,
@@ -37,7 +37,7 @@ pub fn increase_funds(
     budget.increase_funds(amount);
     let new_value = budget.current_funds;
     let action = Action::new(command.value(), Some(*amount), old_value, new_value);
-    insert_action(db, &action)?;
+    action.insert_action(db)?;
     let action_id = db.last_insert_rowid();
     let record = Record::new(budget.budget_id.unwrap(), action_id as u32, description);
     let rows = update_budget(db, &budget)?;
@@ -58,7 +58,7 @@ pub fn reduce_funds(
     budget.reduce_funds(amount);
     let new_value = budget.current_funds;
     let action = Action::new(command.value(), Some(*amount), old_value, new_value);
-    insert_action(db, &action)?;
+    action.insert_action(db)?;
     let rows = update_budget(db, &budget)?;
     let action_id = db.last_insert_rowid();
     let record = Record::new(budget.budget_id.unwrap(), action_id as u32, description);
@@ -78,7 +78,7 @@ pub fn reset_funds(
     budget.reset_funds();
     let new_value = budget.current_funds;
     let action = Action::new(command.value(), None, old_value, new_value);
-    insert_action(db, &action)?;
+    action.insert_action(db)?;
     let rows = update_budget(db, &budget)?;
     let action_id = db.last_insert_rowid();
     let record = Record::new(budget.budget_id.unwrap(), action_id as u32, description);
@@ -99,7 +99,7 @@ pub fn set_current_funds(
     budget.set_current_funds(amount);
     let new_value = budget.current_funds;
     let action = Action::new(command.value(), Some(*amount), old_value, new_value);
-    insert_action(db, &action)?;
+    action.insert_action(db)?;
     let rows = update_budget(db, &budget)?;
     let action_id = db.last_insert_rowid();
     let record = Record::new(budget.budget_id.unwrap(), action_id as u32, description);
@@ -120,7 +120,7 @@ pub fn set_initial_funds(
     budget.set_initial_funds(amount);
     let new_value = budget.current_funds;
     let action = Action::new(command.value(), Some(*amount), old_value, new_value);
-    insert_action(db, &action)?;
+    action.insert_action(db)?;
     let rows = update_budget(db, &budget)?;
     let action_id = db.last_insert_rowid();
     let record = Record::new(budget.budget_id.unwrap(), action_id as u32, description);

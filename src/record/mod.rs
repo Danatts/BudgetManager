@@ -1,6 +1,6 @@
+use crate::history::History;
 use chrono::{DateTime, Local};
 use rusqlite::Connection;
-use crate::history::History;
 
 pub struct Record {
     pub record_id: Option<u32>,
@@ -67,7 +67,7 @@ pub fn get_records_by_budget(
     let mut stmt = db.prepare(query)?;
 
     let record_iter = stmt.query_map([budget_id], |row| {
-        Ok(History{
+        Ok(History {
             date: row.get(0)?,
             budget_name: row.get(1)?,
             action_name: row.get(2)?,
@@ -97,7 +97,7 @@ pub fn get_all_records(db: &Connection) -> Result<Vec<History>, rusqlite::Error>
     let mut stmt = db.prepare(query)?;
 
     let record_iter = stmt.query_map([], |row| {
-        Ok(History{
+        Ok(History {
             date: row.get(0)?,
             budget_name: row.get(1)?,
             action_name: row.get(2)?,
