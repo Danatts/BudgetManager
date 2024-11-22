@@ -41,7 +41,7 @@ impl Record {
             ";
         conn.execute(
             query,
-            (
+            params![
                 &self.budget_id,
                 &self.action,
                 &self.amount,
@@ -49,7 +49,7 @@ impl Record {
                 &self.new_value,
                 &self.description,
                 &self.created_at,
-            ),
+            ],
         )?;
         Ok(conn.last_insert_rowid() as u32)
     }
@@ -116,8 +116,6 @@ impl Record {
         })?;
         records_iter.collect()
     }
-
-    pub fn update_record_by_id() {}
 
     pub fn delete_record_by_id(conn: &Connection, record_id: u32) -> Result<usize> {
         let query = "
@@ -246,7 +244,7 @@ mod tests {
     }
 
     #[test]
-    fn delete_records_by_id_ok() {
+    fn delete_record_by_id_ok() {
         let conn = setup_test_db().unwrap();
         let record = Record::new(1, "action_test", 100.0, 500.0, 600.0, &None);
         record.insert_record(&conn).unwrap();
@@ -255,7 +253,7 @@ mod tests {
     }
 
     #[test]
-    fn delete_records_by_id_empty() {
+    fn delete_record_by_id_empty() {
         let conn = setup_test_db().unwrap();
         let res = Record::delete_record_by_id(&conn, 1).unwrap();
         assert_eq!(res, 0);
