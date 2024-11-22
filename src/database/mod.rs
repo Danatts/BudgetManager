@@ -15,7 +15,7 @@ pub fn open_db(path: Option<PathBuf>) -> Connection {
     };
 
     match Connection::open(path) {
-        Ok(db) => db,
+        Ok(conn) => conn,
         Err(error) => {
             eprintln!("Database connection failed: {}.", error);
             process::exit(1);
