@@ -63,4 +63,8 @@ Options:
 
 ### Fix
 
-- 
+- [ ] Change initial value when set initial budget command is call
+
+### Testing
+
+- [ ] Add test to CLI

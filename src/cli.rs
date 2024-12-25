@@ -2,7 +2,7 @@ use crate::budget::create_budget_table;
 use crate::record::create_record_table;
 use crate::services::{
     create_budget, increase_funds, print_budgets, print_history, reduce_funds, remove_budget,
-    rename_budget, reset_funds, set_current_funds, set_initial_funds,
+    rename_budget, reset_funds, set_current_funds, set_initial_funds, undo_last,
 };
 use clap::{Parser, Subcommand};
 use rusqlite::Connection;
@@ -87,6 +87,8 @@ pub enum Command {
         #[arg(long, short, value_name = "DESCRIPTION")]
         description: Option<String>,
     },
+    /// Undo last action
+    Undo,
 }
 
 impl Command {
@@ -201,6 +203,10 @@ pub fn run(conn: &mut Connection, command: Command) {
             description: _,
         } => match reset_funds(conn, &command) {
             Ok(rows) => println!("{} record updated.", rows),
+            Err(error) => eprintln!("Error: {}", error),
+        },
+        Command::Undo => match undo_last(conn) {
+            Ok(rows) => println!("{} actions undone", rows),
             Err(error) => eprintln!("Error: {}", error),
         },
     }

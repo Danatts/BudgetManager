@@ -153,6 +153,17 @@ pub fn set_initial_funds(conn: &mut Connection, command: &Command) -> Result<usi
     }
 }
 
+pub fn undo_last(conn: &mut Connection) -> Result<usize> {
+    let tx = conn.transaction()?;
+    let last_record = Record::get_last_record(&tx)?;
+    let mut budget = Budget::get_budget_by_id(&tx, &last_record.budget_id)?;
+    budget.set_current_funds(&last_record.old_value);
+    budget.update_budget(&tx)?;
+    let res = Record::delete_record_by_id(&tx, &last_record.record_id.unwrap())?;
+    tx.commit()?;
+    Ok(res)
+}
+
 pub fn print_budgets(conn: &Connection) -> Result<()> {
     let budgets = Budget::get_all_budgets(conn)?;
     Ok(list_budgets(&budgets))
@@ -293,5 +304,27 @@ mod tests {
     }
 
     #[test]
-    fn get_history_ok() {}
+    fn undo_last_ok() {
+        let mut conn = setup_test_db().unwrap();
+        let budget = Budget::new("budget_test", &500.0);
+        let command = Command::Reduce {
+            id: 1,
+            amount: 100.0,
+            description: Some("test_description".to_string()),
+        };
+        let _ = budget.insert_budget(&conn);
+        let _ = reduce_funds(&mut conn, &command);
+        let _ = reduce_funds(&mut conn, &command);
+        let budget = Budget::get_budget_by_id(&conn, &1).unwrap();
+        let record = Record::get_last_record(&conn).unwrap();
+        assert_eq!(budget.budget_id, Some(1));
+        assert_eq!(budget.current_funds, 300.0);
+        assert_eq!(record.record_id, Some(2));
+        let _ = undo_last(&mut conn);
+        let budget = Budget::get_budget_by_id(&conn, &1).unwrap();
+        let record = Record::get_last_record(&conn).unwrap();
+        assert_eq!(budget.budget_id, Some(1));
+        assert_eq!(budget.current_funds, 400.0);
+        assert_eq!(record.record_id, Some(1));
+    }
 }

@@ -55,7 +55,7 @@ impl Record {
         Ok(conn.last_insert_rowid() as u32)
     }
 
-    pub fn get_record_by_id(conn: &Connection, record_id: u32) -> Result<Record> {
+    pub fn get_record_by_id(conn: &Connection, record_id: &u32) -> Result<Record> {
         let query = "
             SELECT record_id, budget_id, action, amount, old_value, new_value, description, created_at
             FROM records
@@ -96,7 +96,7 @@ impl Record {
         records_iter.collect()
     }
 
-    pub fn get_records_by_budget_id(conn: &Connection, budget_id: u32) -> Result<Vec<Record>> {
+    pub fn get_records_by_budget_id(conn: &Connection, budget_id: &u32) -> Result<Vec<Record>> {
         let query = "
             SELECT record_id, budget_id, action, amount, old_value, new_value, description, created_at
             FROM records
@@ -118,11 +118,40 @@ impl Record {
         records_iter.collect()
     }
 
-    pub fn delete_record_by_id(conn: &Connection, record_id: u32) -> Result<usize> {
+    pub fn get_last_record(conn: &Connection) -> Result<Record> {
+        let query = "
+            SELECT * 
+            FROM records 
+            WHERE created_at = (SELECT MAX(created_at) FROM records);
+            ";
+        conn.query_row(query, params![], |row| {
+            Ok(Record {
+                record_id: row.get(0)?,
+                budget_id: row.get(1)?,
+                action: row.get(2)?,
+                amount: row.get(3)?,
+                old_value: row.get(4)?,
+                new_value: row.get(5)?,
+                description: row.get(6)?,
+                created_at: row.get(7)?,
+            })
+        })
+    }
+
+    pub fn delete_records_by_budget_id(conn: &Connection, budget_id: &u32) -> Result<usize> {
         let query = "
             DELETE
             FROM records
             WHERE budget_id = ?1
+            ";
+        conn.execute(query, params![budget_id])
+    }
+
+    pub fn delete_record_by_id(conn: &Connection, record_id: &u32) -> Result<usize> {
+        let query = "
+            DELETE
+            FROM records
+            WHERE record_id = ?1
             ";
         conn.execute(query, params![record_id])
     }
@@ -183,7 +212,7 @@ mod tests {
         let conn = setup_test_db().unwrap();
         let record = Record::new(1, "action_test", 100.0, 500.0, 600.0, &None);
         record.insert_record(&conn).unwrap();
-        let record = Record::get_record_by_id(&conn, 1).unwrap();
+        let record = Record::get_record_by_id(&conn, &1).unwrap();
         assert_eq!(record.record_id, Some(1));
         assert_eq!(record.budget_id, 1);
         assert_eq!(record.action, "action_test");
@@ -196,7 +225,7 @@ mod tests {
     #[test]
     fn get_record_by_id_ko() {
         let conn = setup_test_db().unwrap();
-        let record = Record::get_record_by_id(&conn, 1);
+        let record = Record::get_record_by_id(&conn, &1);
         assert!(record.is_err_and(|x| x == rusqlite::Error::QueryReturnedNoRows));
     }
 
@@ -229,7 +258,7 @@ mod tests {
         record_01.insert_record(&conn).unwrap();
         record_02.insert_record(&conn).unwrap();
         record_03.insert_record(&conn).unwrap();
-        let records = Record::get_records_by_budget_id(&conn, 1).unwrap();
+        let records = Record::get_records_by_budget_id(&conn, &1).unwrap();
         assert_eq!(records.len(), 2);
         assert_eq!(records[0].record_id, Some(1));
         assert_eq!(records[1].record_id, Some(2));
@@ -240,23 +269,32 @@ mod tests {
         let conn = setup_test_db().unwrap();
         let record = Record::new(1, "action_test", 100.0, 500.0, 600.0, &None);
         record.insert_record(&conn).unwrap();
-        let records = Record::get_records_by_budget_id(&conn, 2).unwrap();
+        let records = Record::get_records_by_budget_id(&conn, &2).unwrap();
         assert_eq!(records.len(), 0);
     }
 
     #[test]
-    fn delete_record_by_id_ok() {
+    fn get_last_record_ok() {
         let conn = setup_test_db().unwrap();
         let record = Record::new(1, "action_test", 100.0, 500.0, 600.0, &None);
         record.insert_record(&conn).unwrap();
-        let res = Record::delete_record_by_id(&conn, 1).unwrap();
+        let record = Record::get_last_record(&conn).unwrap();
+        assert_eq!(record.record_id, Some(1));
+    }
+
+    #[test]
+    fn delete_records_by_budget_id_ok() {
+        let conn = setup_test_db().unwrap();
+        let record = Record::new(1, "action_test", 100.0, 500.0, 600.0, &None);
+        record.insert_record(&conn).unwrap();
+        let res = Record::delete_records_by_budget_id(&conn, &1).unwrap();
         assert_eq!(res, 1);
     }
 
     #[test]
-    fn delete_record_by_id_empty() {
+    fn delete_records_by_budget_id_empty() {
         let conn = setup_test_db().unwrap();
-        let res = Record::delete_record_by_id(&conn, 1).unwrap();
+        let res = Record::delete_records_by_budget_id(&conn, &1).unwrap();
         assert_eq!(res, 0);
     }
 }
