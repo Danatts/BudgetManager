@@ -53,6 +53,14 @@ Options:
 
 ## TODO
 
-- [ ] Remove and edit transactions
-- [ ] Handle more than one budget
+### Features
+
+- [ ] Undo last action
+- [ ] Delete on cascade on tables
+- [ ] Edit records
 - [ ] Display warning when user is getting close to going over budget
+- [ ] Warning when user delete a budget
+
+### Fix
+
+- 
