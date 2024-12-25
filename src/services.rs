@@ -5,7 +5,7 @@ use crate::record::Record;
 use crate::{budget::Budget, history::History};
 use rusqlite::{Connection, Result};
 
-pub fn create_budget(conn: &Connection, name: &str, funds: &f64) -> Result<u32> {
+pub fn create_budget(conn: &Connection, name: &str, funds: &f64) -> Result<usize> {
     let budget = Budget::new(name, funds);
     budget.insert_budget(conn)
 }
@@ -21,136 +21,135 @@ pub fn rename_budget(conn: &Connection, id: &u32, name: &str) -> Result<usize> {
 }
 
 pub fn increase_funds(conn: &mut Connection, command: &Command) -> Result<usize> {
-    match command {
-        Command::Increase {
-            id,
-            amount,
+    if let Command::Increase {
+        id,
+        amount,
+        description,
+    } = command
+    {
+        let mut budget = Budget::get_budget_by_id(conn, id)?;
+        let old_value = budget.current_funds;
+        budget.increase_funds(amount);
+        let new_value = budget.current_funds;
+        let record = Record::new(
+            *id,
+            command.value(),
+            *amount,
+            old_value,
+            new_value,
             description,
-        } => {
-            let mut budget = Budget::get_budget_by_id(conn, id)?;
-            let old_value = budget.current_funds;
-            budget.increase_funds(amount);
-            let new_value = budget.current_funds;
-            let record = Record::new(
-                *id,
-                command.value(),
-                *amount,
-                old_value,
-                new_value,
-                description,
-            );
-            let tx = conn.transaction().unwrap();
-            let res = budget.update_budget(&tx)?;
-            record.insert_record(&tx)?;
-            tx.commit()?;
-            Ok(res)
-        }
-        _ => Ok(1),
+        );
+        let tx = conn.transaction().unwrap();
+        let res = budget.update_budget(&tx)?;
+        record.insert_record(&tx)?;
+        tx.commit()?;
+        Ok(res)
+    } else {
+        Err(rusqlite::Error::InvalidQuery)
     }
 }
 
 pub fn reduce_funds(conn: &mut Connection, command: &Command) -> Result<usize> {
-    match command {
-        Command::Reduce {
-            id,
-            amount,
+    if let Command::Reduce {
+        id,
+        amount,
+        description,
+    } = command
+    {
+        let mut budget = Budget::get_budget_by_id(conn, id)?;
+        let old_value = budget.current_funds;
+        budget.reduce_funds(amount);
+        let new_value = budget.current_funds;
+        let record = Record::new(
+            *id,
+            command.value(),
+            *amount,
+            old_value,
+            new_value,
             description,
-        } => {
-            let mut budget = Budget::get_budget_by_id(conn, id)?;
-            let old_value = budget.current_funds;
-            budget.reduce_funds(amount);
-            let new_value = budget.current_funds;
-            let record = Record::new(
-                *id,
-                command.value(),
-                *amount,
-                old_value,
-                new_value,
-                description,
-            );
-            let tx = conn.transaction().unwrap();
-            let res = budget.update_budget(&tx)?;
-            record.insert_record(&tx)?;
-            tx.commit()?;
-            Ok(res)
-        }
-        _ => Ok(1),
+        );
+        let tx = conn.transaction().unwrap();
+        let res = budget.update_budget(&tx)?;
+        record.insert_record(&tx)?;
+        tx.commit()?;
+        Ok(res)
+    } else {
+        Err(rusqlite::Error::InvalidQuery)
     }
 }
 
 pub fn reset_funds(conn: &mut Connection, command: &Command) -> Result<usize> {
-    match command {
-        Command::Reset { id, description } => {
-            let mut budget = Budget::get_budget_by_id(conn, id)?;
-            let old_value = budget.current_funds;
-            budget.reset_funds();
-            let new_value = budget.current_funds;
-            let record = Record::new(*id, command.value(), 0.0, old_value, new_value, description);
-            let tx = conn.transaction().unwrap();
-            let res = budget.update_budget(&tx)?;
-            record.insert_record(&tx)?;
-            tx.commit()?;
-            Ok(res)
-        }
-        _ => Ok(1),
+    if let Command::Reset { id, description } = command {
+        let mut budget = Budget::get_budget_by_id(conn, id)?;
+        let old_value = budget.current_funds;
+        budget.reset_funds();
+        let new_value = budget.current_funds;
+        let record = Record::new(*id, command.value(), 0.0, old_value, new_value, description);
+        let tx = conn.transaction().unwrap();
+        let res = budget.update_budget(&tx)?;
+        record.insert_record(&tx)?;
+        tx.commit()?;
+        Ok(res)
+    } else {
+        Err(rusqlite::Error::InvalidQuery)
     }
 }
 
 pub fn set_current_funds(conn: &mut Connection, command: &Command) -> Result<usize> {
-    match command {
-        Command::Current {
-            id,
-            amount,
+    if let Command::Current {
+        id,
+        amount,
+        description,
+    } = command
+    {
+        let mut budget = Budget::get_budget_by_id(conn, id)?;
+        let old_value = budget.current_funds;
+        budget.set_current_funds(amount);
+        let new_value = budget.current_funds;
+        let record = Record::new(
+            *id,
+            command.value(),
+            *amount,
+            old_value,
+            new_value,
             description,
-        } => {
-            let mut budget = Budget::get_budget_by_id(conn, id)?;
-            let old_value = budget.current_funds;
-            budget.set_current_funds(amount);
-            let new_value = budget.current_funds;
-            let record = Record::new(
-                *id,
-                command.value(),
-                *amount,
-                old_value,
-                new_value,
-                description,
-            );
-            let tx = conn.transaction().unwrap();
-            let res = budget.update_budget(&tx)?;
-            record.insert_record(&tx)?;
-            tx.commit()?;
-            Ok(res)
-        }
-        _ => Ok(1),
+        );
+        let tx = conn.transaction().unwrap();
+        let res = budget.update_budget(&tx)?;
+        record.insert_record(&tx)?;
+        tx.commit()?;
+        Ok(res)
+    } else {
+        Err(rusqlite::Error::InvalidQuery)
     }
 }
 
 pub fn set_initial_funds(conn: &mut Connection, command: &Command) -> Result<usize> {
-    match command {
-        Command::Initial {
-            id,
-            amount,
+    if let Command::Initial {
+        id,
+        amount,
+        description,
+    } = command
+    {
+        let mut budget = Budget::get_budget_by_id(conn, id)?;
+        let old_value = budget.initial_funds;
+        budget.set_initial_funds(amount);
+        let new_value = budget.initial_funds;
+        let record = Record::new(
+            *id,
+            command.value(),
+            *amount,
+            old_value,
+            new_value,
             description,
-        } => {
-            let mut budget = Budget::get_budget_by_id(conn, id)?;
-            let old_value = budget.initial_funds;
-            budget.set_initial_funds(amount);
-            let new_value = budget.initial_funds;
-            let record = Record::new(
-                *id,
-                command.value(),
-                *amount,
-                old_value,
-                new_value,
-                description,
-            );
-            let tx = conn.transaction().unwrap();
-            let res = budget.update_budget(&tx)?;
-            record.insert_record(&tx)?;
-            tx.commit()?;
-            Ok(res)
-        }
-        _ => Ok(1),
+        );
+        let tx = conn.transaction().unwrap();
+        let res = budget.update_budget(&tx)?;
+        record.insert_record(&tx)?;
+        tx.commit()?;
+        Ok(res)
+    } else {
+        Err(rusqlite::Error::InvalidQuery)
     }
 }
 
@@ -160,15 +159,12 @@ pub fn print_budgets(conn: &Connection) -> Result<()> {
 }
 
 pub fn print_history(conn: &Connection, id: &Option<u32>, limit: &Option<u32>) -> Result<()> {
-    match id {
-        Some(id) => {
-            let list = History::get_history_by_budget_id(conn, *id, limit)?;
-            Ok(list_history(&list))
-        }
-        None => {
-            let list = History::get_all_history(conn, limit)?;
-            Ok(list_history(&list))
-        }
+    if let Some(id) = id {
+        let list = History::get_history_by_budget_id(conn, *id, limit)?;
+        Ok(list_history(&list))
+    } else {
+        let list = History::get_all_history(conn, limit)?;
+        Ok(list_history(&list))
     }
 }
 

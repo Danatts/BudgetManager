@@ -20,7 +20,7 @@ impl Budget {
         }
     }
 
-    pub fn insert_budget(&self, conn: &Connection) -> Result<u32> {
+    pub fn insert_budget(&self, conn: &Connection) -> Result<usize> {
         let query = "
             INSERT INTO budgets (name, initial_funds, current_funds)
             VALUES (?1, ?2, ?3)
@@ -29,7 +29,7 @@ impl Budget {
             query,
             params![&self.name, &self.initial_funds, &self.current_funds],
         )?;
-        Ok(conn.last_insert_rowid() as u32)
+        Ok(conn.last_insert_rowid() as usize)
     }
 
     pub fn get_budget_by_id(conn: &Connection, budget_id: &u32) -> Result<Budget> {
