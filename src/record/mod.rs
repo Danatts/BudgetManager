@@ -1,6 +1,7 @@
 use chrono::{DateTime, Local};
 use rusqlite::{params, Connection, Result};
 
+#[derive(Debug)]
 pub struct Record {
     pub record_id: Option<u32>,
     pub budget_id: u32,

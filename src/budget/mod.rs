@@ -1,6 +1,6 @@
 use crate::utils;
 use accounting::Accounting;
-use rusqlite::{params, Connection, Result};
+use rusqlite::{params, Connection, Result, Transaction};
 use std::fmt;
 
 pub struct Budget {
@@ -14,7 +14,7 @@ impl Budget {
     pub fn new(name: &str, funds: &f64) -> Self {
         Self {
             budget_id: None,
-            name: utils::capitalize(name),
+            name: utils::upper(name),
             initial_funds: *funds,
             current_funds: *funds,
         }
@@ -32,7 +32,7 @@ impl Budget {
         Ok(conn.last_insert_rowid() as u32)
     }
 
-    pub fn get_budget_by_id(conn: &Connection, budget_id: u32) -> Result<Budget> {
+    pub fn get_budget_by_id(conn: &Connection, budget_id: &u32) -> Result<Budget> {
         let query = "
             SELECT *
             FROM budgets
@@ -71,7 +71,8 @@ impl Budget {
             SET name = ?1,
                 initial_funds = ?2,
                 current_funds = ?3
-            WHERE budget_id = ?4";
+            WHERE budget_id = ?4
+            ";
         conn.execute(
             query,
             params![
@@ -83,7 +84,26 @@ impl Budget {
         )
     }
 
-    pub fn delete_budget_by_id(conn: &Connection, budget_id: u32) -> Result<usize> {
+    pub fn update_budget_tx(&self, tx: &Transaction) -> Result<usize> {
+        let query = "
+            UPDATE budgets
+            SET name = ?1,
+                initial_funds = ?2,
+                current_funds = ?3
+            WHERE budget_id = ?4
+            ";
+        tx.execute(
+            query,
+            params![
+                &self.name,
+                &self.initial_funds,
+                &self.current_funds,
+                &self.budget_id,
+            ],
+        )
+    }
+
+    pub fn delete_budget_by_id(conn: &Connection, budget_id: &u32) -> Result<usize> {
         let query = "
             DELETE 
             FROM budgets
@@ -113,7 +133,7 @@ impl Budget {
     }
 
     pub fn rename(&mut self, new_name: &str) {
-        self.name = utils::capitalize(new_name);
+        self.name = utils::upper(new_name);
     }
 }
 
@@ -181,7 +201,7 @@ mod tests {
         let conn = setup_test_db().unwrap();
         let budget = Budget::new("budget_test", &500.0);
         budget.insert_budget(&conn).unwrap();
-        let budget = Budget::get_budget_by_id(&conn, 1).unwrap();
+        let budget = Budget::get_budget_by_id(&conn, &1).unwrap();
         assert_eq!(budget.budget_id, Some(1));
         assert_eq!(budget.name, "Budget_test");
         assert_eq!(budget.current_funds, 500.0);
@@ -191,7 +211,7 @@ mod tests {
     #[test]
     fn get_budget_by_id_ko() {
         let conn = setup_test_db().unwrap();
-        let record = Budget::get_budget_by_id(&conn, 1);
+        let record = Budget::get_budget_by_id(&conn, &1);
         assert!(record.is_err_and(|x| x == rusqlite::Error::QueryReturnedNoRows));
     }
 
@@ -220,10 +240,10 @@ mod tests {
         let conn = setup_test_db().unwrap();
         let budget = Budget::new("budget_test", &500.0);
         budget.insert_budget(&conn).unwrap();
-        let mut budget = Budget::get_budget_by_id(&conn, 1).unwrap();
+        let mut budget = Budget::get_budget_by_id(&conn, &1).unwrap();
         budget.reduce_funds(&200.0);
         let res = budget.update_budget(&conn).unwrap();
-        let budget = Budget::get_budget_by_id(&conn, 1).unwrap();
+        let budget = Budget::get_budget_by_id(&conn, &1).unwrap();
         assert_eq!(res, 1);
         assert_eq!(budget.current_funds, 300.0);
     }
@@ -241,14 +261,14 @@ mod tests {
         let conn = setup_test_db().unwrap();
         let budget = Budget::new("budget_test", &500.0);
         budget.insert_budget(&conn).unwrap();
-        let res = Budget::delete_budget_by_id(&conn, 1).unwrap();
+        let res = Budget::delete_budget_by_id(&conn, &1).unwrap();
         assert_eq!(res, 1);
     }
 
     #[test]
     fn delete_budget_by_id_empty() {
         let conn = setup_test_db().unwrap();
-        let res = Budget::delete_budget_by_id(&conn, 1).unwrap();
+        let res = Budget::delete_budget_by_id(&conn, &1).unwrap();
         assert_eq!(res, 0);
     }
 

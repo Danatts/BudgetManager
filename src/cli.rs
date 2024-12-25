@@ -1,9 +1,7 @@
-use crate::action::create_action_table;
-use crate::budget::{create_budget_table, list_budgets};
-use crate::history::print_history;
+use crate::budget::create_budget_table;
 use crate::record::create_record_table;
 use crate::services::{
-    create_budget, get_budgets, get_history, increase_funds, reduce_funds, remove_budget,
+    create_budget, increase_funds, print_budgets, print_history, reduce_funds, remove_budget,
     rename_budget, reset_funds, set_current_funds, set_initial_funds,
 };
 use clap::{Parser, Subcommand};
@@ -27,6 +25,8 @@ pub enum Command {
     History {
         #[arg(value_name = "ID")]
         id: Option<u32>,
+        #[arg(long, short, value_name = "LIMIT")]
+        limit: Option<u32>,
     },
     /// Set initial budget funds
     Initial {
@@ -132,76 +132,74 @@ pub struct Cli {
     pub database: Option<PathBuf>,
 }
 
-pub fn run(db: Connection, command: Command) {
-    if let Err(error) = create_budget_table(&db) {
+pub fn run(conn: &mut Connection, command: Command) {
+    if let Err(error) = create_budget_table(&conn) {
         eprintln!("Error: {}.", error);
         process::exit(1);
     }
 
-    if let Err(error) = create_record_table(&db) {
-        eprintln!("Error: {}.", error);
-        process::exit(1);
-    }
-
-    if let Err(error) = create_action_table(&db) {
+    if let Err(error) = create_record_table(&conn) {
         eprintln!("Error: {}.", error);
         process::exit(1);
     }
 
     match &command {
         Command::Current {
-            id,
-            amount,
-            description,
-        } => match set_current_funds(&db, id, amount, &command, description) {
+            id: _,
+            amount: _,
+            description: _,
+        } => match set_current_funds(conn, &command) {
             Ok(rows) => println!("{} record updates", rows),
             Err(error) => eprintln!("Error: {}", error),
         },
-        Command::History { id } => match get_history(&db, id) {
-            Ok(records) => print_history(&records),
+        Command::History { id, limit } => match print_history(&conn, id, limit) {
+            Ok(_) => {}
             Err(error) => eprintln!("Error: {}", error),
         },
         Command::Increase {
-            id,
-            amount,
-            description,
-        } => match increase_funds(&db, id, amount, &command, description) {
+            id: _,
+            amount: _,
+            description: _,
+        } => match increase_funds(conn, &command) {
             Ok(rows) => println!("{} record updates", rows),
             Err(error) => eprintln!("Error: {}", error),
         },
         Command::Initial {
-            id,
-            amount,
-            description,
-        } => match set_initial_funds(&db, id, amount, &command, description) {
+            id: _,
+            amount: _,
+            description: _,
+        } => match set_initial_funds(conn, &command) {
             Ok(rows) => println!("{} record updates", rows),
             Err(error) => eprintln!("Error: {}", error),
         },
-        Command::List => match get_budgets(&db) {
-            Ok(budgets) => list_budgets(&budgets),
+        Command::List => match print_budgets(&conn) {
+            Ok(_) => {}
             Err(error) => eprintln!("Error: {}", error),
         },
-        Command::New { name, funds } => match create_budget(&db, name, funds) {
+        Command::New { name, funds } => match create_budget(&conn, name, funds) {
             Ok(rows) => println!("{} record inserted.", rows),
             Err(error) => eprintln!("Error: {}", error),
         },
         Command::Reduce {
-            id,
-            amount,
-            description,
-        } => match reduce_funds(&db, id, amount, &command, description) {
+            id: _,
+            amount: _,
+            description: _,
+        } => match reduce_funds(conn, &command) {
             Ok(rows) => println!("{} record updates", rows),
             Err(error) => eprintln!("Error: {}", error),
         },
-        Command::Remove { id } => match remove_budget(&db, id) {
+        Command::Remove { id } => match remove_budget(&conn, id) {
             Ok(rows) => println!("{} record deleted.", rows),
             Err(error) => eprintln!("Error: {}", error),
         },
-        Command::Rename { id, name } => match rename_budget(&db, id, name) {
+        Command::Rename { id, name } => match rename_budget(&conn, id, name) {
             Ok(rows) => println!("{} record updated.", rows),
             Err(error) => eprintln!("Error: {}", error),
         },
-        Command::Reset { id, description } => match reset_funds(&db, id, &command, description) {
+        Command::Reset {
+            id: _,
+            description: _,
+        } => match reset_funds(conn, &command) {
             Ok(rows) => println!("{} record updated.", rows),
             Err(error) => eprintln!("Error: {}", error),
         },

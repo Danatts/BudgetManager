@@ -5,6 +5,6 @@ use clap::Parser;
 
 fn main() {
     let Cli { command, database } = Cli::parse();
-    let db = database::open_db(database);
-    cli::run(db, command);
+    let mut conn = database::open_db(database);
+    cli::run(&mut conn, command);
 }
